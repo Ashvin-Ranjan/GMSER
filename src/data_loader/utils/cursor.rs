@@ -1,5 +1,7 @@
+use std::collections::HashMap;
 use std::io::{self, Read};
 
+use log::{info, warn};
 use snafu::ResultExt;
 
 use crate::data_loader::utils::error::StringDecodeSnafu;
@@ -23,6 +25,18 @@ pub trait CustomCursor {
         callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
         offset: u32,
     ) -> Result<T, DataLoadError>;
+
+    fn read_opt_pointer<T>(
+        &mut self,
+        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
+        offset: u32,
+    ) -> Result<Option<T>, DataLoadError>;
+
+    fn read_pointer_map<T>(
+        &mut self,
+        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
+        offset: u32,
+    ) -> Result<HashMap<u32, T>, DataLoadError>;
 }
 
 impl CustomCursor for io::Cursor<&[u8]> {
@@ -104,6 +118,11 @@ impl CustomCursor for io::Cursor<&[u8]> {
         offset: u32,
     ) -> Result<T, DataLoadError> {
         let location = self.read_u32()?;
+        if location <= 0 {
+            return Err(DataLoadError::InvalidReadError {
+                pos: location as u64,
+            });
+        }
         let reset_pos = self.position();
 
         self.set_position((location + offset) as u64);
@@ -114,8 +133,73 @@ impl CustomCursor for io::Cursor<&[u8]> {
 
         output
     }
+
+    fn read_opt_pointer<T>(
+        &mut self,
+        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
+        offset: u32,
+    ) -> Result<Option<T>, DataLoadError> {
+        let location = self.read_u32()?;
+        if location <= 0 {
+            return Ok(None);
+        }
+
+        self.set_position(self.position() - 4);
+
+        Ok(Some(self.read_obj_pointer(callback, offset)?))
+    }
+
+    fn read_pointer_map<T>(
+        &mut self,
+        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
+        offset: u32,
+    ) -> Result<HashMap<u32, T>, DataLoadError> {
+        let number = self.read_u32()?;
+
+        let mut output = HashMap::new();
+
+        for _ in 0..number {
+            let key = self.read_u32()?;
+            self.set_position(self.position() - 4);
+            output.insert(key, self.read_obj_pointer(callback, offset)?);
+        }
+
+        Ok(output)
+    }
 }
 
 pub fn read_string_callback(cursor: &mut io::Cursor<&[u8]>) -> Result<String, DataLoadError> {
     cursor.read_string()
+}
+
+pub fn handle_cursor_alignment(
+    cursor: &mut io::Cursor<&[u8]>,
+    start_pos: u64,
+    size: u64,
+    exists_map: bool,
+) -> Result<(), DataLoadError> {
+    let expected_end = start_pos + size;
+    if cursor.position() > expected_end {
+        return Err(DataLoadError::ChunkEscapeError {
+            pos: cursor.position(),
+            loc: expected_end,
+        });
+    } else if cursor.position() < expected_end {
+        if expected_end - cursor.position() < 16 || exists_map {
+            info!(
+                "Cursor position at {}, moving to {}. (This could be chunk alignment, a map, or a bug)",
+                cursor.position(),
+                expected_end
+            );
+        } else {
+            warn!(
+                "Cursor position at {}, moving to {}. (This is a bug)",
+                cursor.position(),
+                expected_end
+            );
+        }
+        cursor.set_position(expected_end);
+    }
+
+    Ok(())
 }

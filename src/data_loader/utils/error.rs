@@ -16,4 +16,15 @@ pub enum DataLoadError {
     IOError { source: io::Error, pos: u64 },
     #[snafu(display("Escaped the chunk! At position {pos}, should be {loc}."))]
     ChunkEscapeError { pos: u64, loc: u64 },
+    #[snafu(display("GMSER does not currently support version {major}.{minor} (build {build}, release {release}"))]
+    InvalidVersionError {
+        major: u32,
+        minor: u32,
+        build: u32,
+        release: u32,
+    },
+    #[snafu(display("Invalid sound flag: `{flag}`. (Position: {pos})"))]
+    InvalidSoundFlag { pos: u64, flag: u32 },
+    #[snafu(display("Attempting to read a pointer at {pos}."))]
+    InvalidReadError { pos: u64 },
 }

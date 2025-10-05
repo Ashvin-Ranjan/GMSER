@@ -6,12 +6,12 @@ TODOs:
     -   [ ] FORM
         -   [x] Basic Data
         -   [ ] Loading all chunks
-    -   [ ] GEN8
+    -   [x] GEN8
     -   [ ] OPTN
-    -   [ ] LANG
+    -   [x] LANG
     -   [ ] EXTN
     -   [ ] SOND
-    -   [ ] AGRB
+    -   [ ] AGRP
     -   [ ] SPRT
     -   [ ] BGND
     -   [ ] PATH
@@ -19,6 +19,7 @@ TODOs:
     -   [ ] GLOB
     -   [ ] SHDR
     -   [ ] FONT
+    -   [ ] TMLN
     -   [ ] OBJT
     -   [ ] FEDS
     -   [ ] ACRV
@@ -33,7 +34,7 @@ TODOs:
     -   [ ] VARI
     -   [ ] FUNC
     -   [ ] FEAT
-    -   [ ] STRG
+    -   [x] STRG
     -   [ ] TXTR
     -   [ ] AUDO
 -   [ ] Running the game

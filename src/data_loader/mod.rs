@@ -1,6 +1,10 @@
 // Chunks
 pub mod form;
 mod gen8;
+mod lang;
+mod optn;
+mod sond;
+mod strg;
 
 // Misc.
-pub mod utils;
+mod utils;

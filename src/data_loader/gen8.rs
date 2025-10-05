@@ -5,7 +5,7 @@ use log::{info, warn};
 use snafu::ResultExt;
 
 use crate::data_loader::utils::{
-    cursor::{read_string_callback, CustomCursor},
+    cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
     error::{DataLoadError, IOSnafu},
 };
 
@@ -16,14 +16,6 @@ pub struct VersionInfo {
     pub build: u32,
     pub release: u32,
     pub format: u8,
-}
-
-#[derive(Debug)]
-pub struct GMS2Data {
-    pub random_uid: [u64; 4],
-    pub fps: f32,
-    pub allow_statistics: bool,
-    pub guid: [u8; 16],
 }
 
 #[derive(Debug)]
@@ -51,9 +43,12 @@ pub struct Gen8Chunk {
     pub active_targets: u64,
     pub function_classifications: u64, // TODO: Understand this
     pub steam_app_id: u32,
-    pub debugger_port: Option<u32>, // Only available if format_id is greater than 13
+    pub debugger_port: u32,
     pub room_order: Vec<u32>,
-    pub gms2_data: Option<GMS2Data>,
+    pub random_uid: [u64; 4],
+    pub fps: f32,
+    pub allow_statistics: bool,
+    pub guid: [u8; 16],
 }
 
 impl Gen8Chunk {
@@ -61,11 +56,13 @@ impl Gen8Chunk {
 }
 
 pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoadError> {
+    info!("Deserializing GEN8");
+
     let ident = cursor.read_ident()?;
 
     if ident != Gen8Chunk::IDENT {
         return Result::Err(DataLoadError::UnexpectedIdent {
-            pos: 0,
+            pos: cursor.position() - 4,
             expected: Gen8Chunk::IDENT,
             actual: ident,
         });
@@ -88,10 +85,21 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
         .read_exact(&mut legacy_guid)
         .context(IOSnafu { pos: start_pos })?;
     let game_name = cursor.read_obj_pointer(read_string_callback, 0)?;
+
     let major_version = cursor.read_u32()?;
     let minor_version = cursor.read_u32()?;
     let release_number = cursor.read_u32()?;
     let build_number = cursor.read_u32()?;
+
+    if major_version < 2 || format_id < 17 {
+        return Err(DataLoadError::InvalidVersionError {
+            major: major_version,
+            minor: minor_version,
+            build: build_number,
+            release: release_number,
+        });
+    }
+
     let default_window_width = cursor.read_u32()?;
     let default_window_height = cursor.read_u32()?;
     warn!("Still parsing info flags as number. Implement custom parsing");
@@ -107,11 +115,7 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
     warn!("Still parsing function classifications as number. Implement custom parsing");
     let function_classifications = cursor.read_u64()?;
     let steam_app_id = cursor.read_u32()?;
-    let debugger_port = if format_id < 14 {
-        None
-    } else {
-        Some(cursor.read_u32()?)
-    };
+    let debugger_port = cursor.read_u32()?;
 
     let room_count = cursor.read_u32()?;
     let mut room_order = Vec::new();
@@ -119,43 +123,21 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
         room_order.push(cursor.read_u32()?);
     }
 
-    let mut gms2_data = None;
-
-    if major_version >= 2 {
-        warn!("Missing Random GUID verification from Dog Scepter");
-        cursor.read_u64()?; // Throw this away for now
-        let mut random_uid = [0u64; 4];
-        for i in 0..4 {
-            random_uid[i] = cursor.read_u64()?;
-        }
-
-        let fps = cursor.read_f32()?;
-        let allow_statistics = cursor.read_u32()? != 0;
-        let mut game_guid = [0u8; 16];
-        cursor
-            .read_exact(&mut game_guid)
-            .context(IOSnafu { pos: start_pos })?;
-        gms2_data = Some(GMS2Data {
-            random_uid,
-            fps,
-            allow_statistics,
-            guid: game_guid,
-        })
+    warn!("Missing Random GUID verification from Dog Scepter");
+    cursor.read_u64()?; // Throw this away for now
+    let mut random_uid = [0u64; 4];
+    for i in 0..4 {
+        random_uid[i] = cursor.read_u64()?;
     }
 
-    if cursor.position() > start_pos + (size as u64) {
-        return Err(DataLoadError::ChunkEscapeError {
-            pos: cursor.position(),
-            loc: start_pos + (size as u64),
-        });
-    } else if cursor.position() < start_pos + (size as u64) {
-        warn!(
-            "Cursor position at {}, moving to {}.",
-            cursor.position(),
-            start_pos + (size as u64)
-        );
-        cursor.set_position(start_pos + (size as u64));
-    }
+    let fps = cursor.read_f32()?;
+    let allow_statistics = cursor.read_u32()? != 0;
+    let mut game_guid = [0u8; 16];
+    cursor
+        .read_exact(&mut game_guid)
+        .context(IOSnafu { pos: start_pos })?;
+
+    handle_cursor_alignment(cursor, start_pos, size as u64, false)?;
 
     Ok(Gen8Chunk {
         size,
@@ -187,6 +169,9 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
         steam_app_id,
         debugger_port,
         room_order,
-        gms2_data,
+        random_uid,
+        fps,
+        allow_statistics,
+        guid: game_guid,
     })
 }
