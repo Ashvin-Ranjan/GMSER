@@ -1,28 +1,20 @@
-mod chunk_handler;
-mod utils;
+mod data_loader;
 
-use chunk_handler::{chunk::locate_chunks, gen8_chunk::{read_game_info, GameInfo}, glob_chunk::read_global_entries};
-use lazy_static::lazy_static;
-use utils::read::read_pointer_map;
-use std::{collections::HashMap, fs};
-
-lazy_static! {
-    pub static ref FILE_DATA: Vec<u8> = fs::read("data.win").expect("Cannot read data.win");
-}
+use std::fs;
 
 fn main() {
-    let chunks = locate_chunks().unwrap();
-    let mut game_info: GameInfo;
-    let mut string_map: HashMap<u32, String>;
-    let mut global_entries: Vec<u32>;
+    env_logger::init();
+    let FILE_DATA: Vec<u8> = fs::read("data.win").expect("Cannot read data.win");
 
-    for chunk in chunks {
-        println!("Name: {} | Size: {} | Location: {}", chunk.ident, chunk.size, chunk.start);
-        match chunk.ident.as_str() {
-            "GEN8" => { game_info = read_game_info(chunk); },
-            "STRG" => { string_map = read_pointer_map(chunk.start as usize + 8, 4); },
-            "GLOB" => { global_entries = read_global_entries(chunk); }
-            _ => {}
-        };
+    let load_res = data_loader::form::deserialize_form(&FILE_DATA);
+
+    if let Ok(data) = load_res {
+        println!("Size: {}", data.size);
+        println!("GEN8 Size: {}", data.gen8.size);
+        println!("Filename: {}", data.gen8.filename);
+        // println!("FPS: {}", data.gen8.gms2_data.unwrap().fps);
+        println!("{:#?}", data.gen8);
+    } else if let Err(error) = load_res {
+        println!("{}", error);
     }
 }
