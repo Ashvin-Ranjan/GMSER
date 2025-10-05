@@ -1,8 +1,8 @@
+use log::warn;
 use std::io::Cursor;
 
-use log::{info, warn};
-
 use crate::data_loader::{
+    audo::{deserialize_audo, AudoChunk},
     gen8::{deserialize_gen8, Gen8Chunk},
     lang::{deserialize_lang, LangChunk},
     optn::{deserialize_optn, OptnChunk},
@@ -18,6 +18,7 @@ pub struct FormChunk {
     pub lang: LangChunk,
     pub strg: StrgChunk,
     pub sond: SondChunk,
+    pub audo: AudoChunk,
 }
 
 impl FormChunk {
@@ -74,7 +75,8 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
     let strg = deserialize_strg(&mut cursor)?;
 
     skip_chunk(&mut cursor)?; // TXTR
-    skip_chunk(&mut cursor)?; // AUDO
+
+    let audo = deserialize_audo(&mut cursor)?;
 
     Ok(FormChunk {
         size,
@@ -83,6 +85,7 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
         lang,
         strg,
         sond,
+        audo,
     })
 }
 

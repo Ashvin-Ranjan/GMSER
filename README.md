@@ -7,7 +7,7 @@ TODOs:
         -   [x] Basic Data
         -   [ ] Loading all chunks
     -   [x] GEN8
-        -   [ ] Add custom bitmap flags
+        -   [x] Add custom bitmap flags
     -   [ ] OPTN
     -   [x] LANG
     -   [ ] EXTN
@@ -37,7 +37,7 @@ TODOs:
     -   [ ] FEAT
     -   [x] STRG
     -   [ ] TXTR
-    -   [ ] AUDO
+    -   [x] AUDO
 -   [ ] Running the game
     -   [ ] Opening the window
     -   [ ] Handling code execution

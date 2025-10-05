@@ -1,6 +1,5 @@
-use std::{collections::HashMap, io::Cursor};
-
 use log::info;
+use std::{collections::HashMap, io::Cursor};
 
 use crate::data_loader::utils::{
     cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},

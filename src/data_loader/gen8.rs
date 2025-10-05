@@ -1,13 +1,104 @@
-use std::io::{Cursor, Read};
-
+use bitflags::bitflags;
 use log::{info, warn};
-
-use snafu::ResultExt;
+use snafu::{OptionExt, ResultExt};
+use std::io::{Cursor, Read};
 
 use crate::data_loader::utils::{
     cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
-    error::{DataLoadError, IOSnafu},
+    error::{DataLoadError, IOSnafu, InvalidFunctionClassificationsSnafu, InvalidInfoFlagsSnafu},
 };
+
+// These flag values are directly taken from DogScepter
+bitflags! {
+    #[derive(Debug)]
+    pub struct InfoFlags: u32 {
+        const FULLSCREEN = 0x0001;        // Start fullscreen
+        const SYNC_VERTEX1 = 0x0002;       // Use synchronization to avoid tearing
+        const SYNC_VERTEX2 = 0x0004;
+        const INTERPOLATE = 0x0008;       // Interpolate colours between pixels
+        const SCALE = 0x0010;             // Scaling: Keep aspect
+        const SHOW_CURSOR = 0x0020;        // Display cursor
+        const SIZABLE = 0x0040;          // Allow window resize
+        const SCREEN_KEY = 0x0080;         // Allow fullscreen switching
+        const SYNC_VERTEX3 = 0x0100;
+        const STUDIO_VERSION_B1 = 0x0200;
+        const STUDIO_VERSION_B2 = 0x0400;
+        const STUDIO_VERSION_B3 = 0x0800;
+        const STUDIO_VERSION_MASK = 0x0E00; // studioVersion = (infoFlags & InfoFlags.StudioVersionMask) >> 9
+        const STEAM_OR_PLAYER = 0x1000;     // Steam or YoYo Player
+        const LOCAL_DATA_ENABLED = 0x2000;
+        const BORDERLESS_WINDOW = 0x4000;  // Borderless Window
+        const DEFAULT_CODE_KIND = 0x8000;
+        const LICENSE_EXCLUSIONS = 0x10000;
+    }
+    #[derive(Debug)]
+    pub struct FunctionClassifications: u64 {
+        const INTERNET = 0x1;
+        const JOYSTICK = 0x2;
+        const GAMEPAD = 0x4;
+        const READ_SCREEN_PIXELS = 0x10;
+        const MATH = 0x20;
+        const ACTION = 0x40;
+        const D3D_STATE = 0x80;
+        const D3D_PRIMITIVE = 0x100;
+        const DATA_STRUCTURE = 0x200;
+        const FILE_LEGACY = 0x400;
+        const INI = 0x800;
+        const FILENAME = 0x1000;
+        const DIRECTORY = 0x2000;
+        const SHELL = 0x4000;
+        const OBSOLETE = 0x8000;
+        const HTTP = 0x10000;
+        const JSON_ZIP = 0x20000;
+        const DEBUG = 0x40000;
+        const MOTION = 0x80000;
+        const COLLISION = 0x100000;
+        const INSTANCE = 0x200000;
+        const ROOM = 0x400000;
+        const GAME = 0x800000;
+        const DISPLAY = 0x1000000;
+        const DEVICE = 0x2000000;
+        const WINDOW = 0x4000000;
+        const DRAW = 0x8000000;
+        const TEXTURE = 0x10000000;
+        const GRAPHICS = 0x20000000;
+        const STRING = 0x40000000;
+        const TILE = 0x80000000;
+        const SURFACE = 0x100000000;
+        const SKELETON = 0x200000000;
+        const IO = 0x400000000;
+        const GM_SYSTEM = 0x800000000;
+        const ARRAY = 0x1000000000;
+        const EXTERNAL = 0x2000000000;
+        const PUSH = 0x4000000000;
+        const DATE = 0x8000000000;
+        const PARTICLE = 0x10000000000;
+        const RESOURCE = 0x20000000000;
+        const HTML5 = 0x40000000000;
+        const SOUND = 0x80000000000;
+        const AUDIO = 0x100000000000;
+        const EVENT = 0x200000000000;
+        const SCRIPT = 0x400000000000;
+        const TEXT = 0x800000000000;
+        const ANALYTICS = 0x1000000000000;
+        const OBJECT = 0x2000000000000;
+        const ASSET = 0x4000000000000;
+        const ACHIEVEMENT = 0x8000000000000;
+        const CLOUD = 0x10000000000000;
+        const ADS = 0x20000000000000;
+        const OS = 0x40000000000000;
+        const IAP = 0x80000000000000;
+        const FACEBOOK = 0x100000000000000;
+        const PHYSICS = 0x200000000000000;
+        const SWF = 0x400000000000000;
+        const PLATFORM_SPECIFIC = 0x800000000000000;
+        const BUFFER = 0x1000000000000000;
+        const STEAM = 0x2000000000000000;
+        const STEAM_UGC = 0x2010000000000000;
+        const SHADER = 0x4000000000000000;
+        const VERTEX = 0x8000000000000000;
+    }
+}
 
 #[derive(Debug)]
 pub struct VersionInfo {
@@ -35,13 +126,13 @@ pub struct Gen8Chunk {
     pub game_name: String,
     pub default_window_width: u32,
     pub default_window_height: u32,
-    pub info_flags: u32, // TODO: Turn this into an enum type or something
+    pub info_flags: InfoFlags,
     pub license_crc2: u32,
     pub license_md5: [u8; 16],
     pub timestamp: u64,
     pub display_name: String,
     pub active_targets: u64,
-    pub function_classifications: u64, // TODO: Understand this
+    pub function_classifications: FunctionClassifications,
     pub steam_app_id: u32,
     pub debugger_port: u32,
     pub room_order: Vec<u32>,
@@ -102,8 +193,13 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
 
     let default_window_width = cursor.read_u32()?;
     let default_window_height = cursor.read_u32()?;
-    warn!("Still parsing info flags as number. Implement custom parsing");
-    let info_flags = cursor.read_u32()?;
+
+    let info_flags_number = cursor.read_u32()?;
+    let info_flags = InfoFlags::from_bits(info_flags_number).context(InvalidInfoFlagsSnafu {
+        pos: cursor.position() - 4,
+        flag: info_flags_number,
+    })?;
+
     let license_crc2 = cursor.read_u32()?;
     let mut license_md5 = [0u8; 16];
     cursor
@@ -112,8 +208,19 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
     let timestamp = cursor.read_u64()?;
     let display_name = cursor.read_obj_pointer(read_string_callback, 0)?;
     let active_targets = cursor.read_u64()?;
+
     warn!("Still parsing function classifications as number. Implement custom parsing");
     let function_classifications = cursor.read_u64()?;
+
+    let function_classifications_number = cursor.read_u64()?;
+    let function_classifications = FunctionClassifications::from_bits(
+        function_classifications_number,
+    )
+    .context(InvalidFunctionClassificationsSnafu {
+        pos: cursor.position() - 8,
+        classifications: function_classifications_number,
+    })?;
+
     let steam_app_id = cursor.read_u32()?;
     let debugger_port = cursor.read_u32()?;
 

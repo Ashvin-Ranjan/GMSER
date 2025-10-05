@@ -1,6 +1,5 @@
-use std::io::Cursor;
-
 use log::{info, warn};
+use std::io::Cursor;
 
 use crate::data_loader::utils::{cursor::CustomCursor, error::DataLoadError};
 

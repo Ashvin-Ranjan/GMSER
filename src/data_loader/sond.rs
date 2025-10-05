@@ -1,18 +1,16 @@
 use bitflags::bitflags;
-use snafu::OptionExt;
-
-use std::{collections::HashMap, io::Cursor};
-
 use log::info;
+use snafu::OptionExt;
+use std::{collections::HashMap, io::Cursor};
 
 use crate::data_loader::utils::{
     cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
-    error::{DataLoadError, InvalidSoundFlagSnafu},
+    error::{DataLoadError, InvalidSoundFlagsSnafu},
 };
 
 bitflags! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub struct SoundFlag: u32 {
+    #[derive(Debug)]
+    pub struct SoundFlags: u32 {
         const IS_EMBEDDED    = 0x1;
         const IS_COMPRESSED    = 0x2;
         const REGULAR   = 0x64;
@@ -22,7 +20,7 @@ bitflags! {
 #[derive(Debug)]
 pub struct Sound {
     pub name: String,
-    pub flag: SoundFlag,
+    pub flag: SoundFlags,
     pub sound_type: Option<String>,
     pub file: String,
     pub effects: u32,
@@ -69,7 +67,7 @@ pub fn deserialize_sond(cursor: &mut Cursor<&[u8]>) -> Result<SondChunk, DataLoa
 fn deserialze_sound(cursor: &mut Cursor<&[u8]>) -> Result<Sound, DataLoadError> {
     let name = cursor.read_obj_pointer(read_string_callback, 0)?;
     let flag_number = cursor.read_u32()?;
-    let flag = SoundFlag::from_bits(flag_number).context(InvalidSoundFlagSnafu {
+    let flag = SoundFlags::from_bits(flag_number).context(InvalidSoundFlagsSnafu {
         pos: cursor.position() - 4,
         flag: flag_number,
     })?;
