@@ -7,10 +7,11 @@ TODOs:
         -   [x] Basic Data
         -   [ ] Loading all chunks
     -   [x] GEN8
+        -   [ ] Add custom bitmap flags
     -   [ ] OPTN
     -   [x] LANG
     -   [ ] EXTN
-    -   [ ] SOND
+    -   [x] SOND
     -   [ ] AGRP
     -   [ ] SPRT
     -   [ ] BGND
