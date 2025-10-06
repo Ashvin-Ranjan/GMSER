@@ -27,6 +27,10 @@ pub enum DataLoadError {
     InvalidSoundFlags { pos: u64, flag: u32 },
     #[snafu(display("Invalid info flags: `{flag}`. (Position: {pos})"))]
     InvalidInfoFlags { pos: u64, flag: u32 },
+    #[snafu(display("Unsupported option version: `{version}`. (Position: {pos})"))]
+    UnsupportedOptionVerion { pos: u64, version: u32 },
+    #[snafu(display("Invalid option flags: `{flag}`. (Position: {pos})"))]
+    InvalidOptionFlags { pos: u64, flag: u64 },
     #[snafu(display("Invalid function classifications: `{classifications}`. (Position: {pos})"))]
     InvalidFunctionClassifications { pos: u64, classifications: u64 },
     #[snafu(display("Attempting to read a pointer at {pos}."))]

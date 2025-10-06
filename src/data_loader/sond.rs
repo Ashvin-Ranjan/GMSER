@@ -46,7 +46,7 @@ pub fn deserialize_sond(cursor: &mut Cursor<&[u8]>) -> Result<SondChunk, DataLoa
     let ident = cursor.read_ident()?;
 
     if ident != SondChunk::IDENT {
-        return Result::Err(DataLoadError::UnexpectedIdent {
+        return Err(DataLoadError::UnexpectedIdent {
             pos: cursor.position() - 4,
             expected: SondChunk::IDENT,
             actual: ident,

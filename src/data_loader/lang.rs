@@ -31,7 +31,7 @@ pub fn deserialize_lang(cursor: &mut Cursor<&[u8]>) -> Result<LangChunk, DataLoa
     let ident = cursor.read_ident()?;
 
     if ident != LangChunk::IDENT {
-        return Result::Err(DataLoadError::UnexpectedIdent {
+        return Err(DataLoadError::UnexpectedIdent {
             pos: cursor.position() - 4,
             expected: LangChunk::IDENT,
             actual: ident,

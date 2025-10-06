@@ -26,7 +26,7 @@ pub fn deserialize_audo(cursor: &mut Cursor<&[u8]>) -> Result<AudoChunk, DataLoa
     let ident = cursor.read_ident()?;
 
     if ident != AudoChunk::IDENT {
-        return Result::Err(DataLoadError::UnexpectedIdent {
+        return Err(DataLoadError::UnexpectedIdent {
             pos: cursor.position() - 4,
             expected: AudoChunk::IDENT,
             actual: ident,

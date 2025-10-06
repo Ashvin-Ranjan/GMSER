@@ -8,16 +8,18 @@ TODOs:
         -   [ ] Loading all chunks
     -   [x] GEN8
         -   [x] Add custom bitmap flags
-    -   [ ] OPTN
+    -   [x] OPTN
+        -   [x] New Format
+        -   [ ] Old Format
     -   [x] LANG
     -   [ ] EXTN
     -   [x] SOND
     -   [ ] AGRP
     -   [ ] SPRT
     -   [ ] BGND
-    -   [ ] PATH
-    -   [ ] SCPT
-    -   [ ] GLOB
+    -   [x] PATH
+    -   [x] SCPT
+    -   [x] GLOB
     -   [ ] SHDR
     -   [ ] FONT
     -   [ ] TMLN

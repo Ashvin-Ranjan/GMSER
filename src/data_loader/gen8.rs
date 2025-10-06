@@ -152,7 +152,7 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
     let ident = cursor.read_ident()?;
 
     if ident != Gen8Chunk::IDENT {
-        return Result::Err(DataLoadError::UnexpectedIdent {
+        return Err(DataLoadError::UnexpectedIdent {
             pos: cursor.position() - 4,
             expected: Gen8Chunk::IDENT,
             actual: ident,
@@ -208,9 +208,6 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
     let timestamp = cursor.read_u64()?;
     let display_name = cursor.read_obj_pointer(read_string_callback, 0)?;
     let active_targets = cursor.read_u64()?;
-
-    warn!("Still parsing function classifications as number. Implement custom parsing");
-    let function_classifications = cursor.read_u64()?;
 
     let function_classifications_number = cursor.read_u64()?;
     let function_classifications = FunctionClassifications::from_bits(

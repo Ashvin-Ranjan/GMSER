@@ -3,9 +3,13 @@ use std::io::Cursor;
 
 use crate::data_loader::{
     audo::{deserialize_audo, AudoChunk},
+    embi::{deserialize_embi, EmbiChunk},
     gen8::{deserialize_gen8, Gen8Chunk},
+    glob::{deserialize_glob, GlobChunk},
     lang::{deserialize_lang, LangChunk},
     optn::{deserialize_optn, OptnChunk},
+    path::{deserialize_path, PathChunk},
+    scpt::{deserialize_scpt, ScptChunk},
     sond::{deserialize_sond, SondChunk},
     strg::{deserialize_strg, StrgChunk},
     utils::{cursor::CustomCursor, error::DataLoadError},
@@ -16,8 +20,12 @@ pub struct FormChunk {
     pub gen8: Gen8Chunk,
     pub optn: OptnChunk,
     pub lang: LangChunk,
-    pub strg: StrgChunk,
     pub sond: SondChunk,
+    pub path: PathChunk,
+    pub scpt: ScptChunk,
+    pub glob: GlobChunk,
+    pub embi: EmbiChunk,
+    pub strg: StrgChunk,
     pub audo: AudoChunk,
 }
 
@@ -31,7 +39,7 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
     let ident = cursor.read_ident()?;
 
     if ident != FormChunk::IDENT {
-        return Result::Err(DataLoadError::UnexpectedIdent {
+        return Err(DataLoadError::UnexpectedIdent {
             pos: cursor.position() - 4,
             expected: FormChunk::IDENT,
             actual: ident,
@@ -51,9 +59,11 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
     skip_chunk(&mut cursor)?; // AGRP
     skip_chunk(&mut cursor)?; // SPRT
     skip_chunk(&mut cursor)?; // BGND
-    skip_chunk(&mut cursor)?; // PATH
-    skip_chunk(&mut cursor)?; // SCPT
-    skip_chunk(&mut cursor)?; // GLOB
+
+    let path = deserialize_path(&mut cursor)?;
+    let scpt = deserialize_scpt(&mut cursor)?;
+    let glob = deserialize_glob(&mut cursor)?;
+
     skip_chunk(&mut cursor)?; // SHDR
     skip_chunk(&mut cursor)?; // FONT
     skip_chunk(&mut cursor)?; // TMLN
@@ -64,7 +74,9 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
     skip_chunk(&mut cursor)?; // TAGS
     skip_chunk(&mut cursor)?; // ROOM
     skip_chunk(&mut cursor)?; // DAFL
-    skip_chunk(&mut cursor)?; // EMBI
+
+    let embi = deserialize_embi(&mut cursor)?;
+
     skip_chunk(&mut cursor)?; // TPAG
     skip_chunk(&mut cursor)?; // TGIN
     skip_chunk(&mut cursor)?; // CODE
@@ -83,19 +95,23 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
         gen8,
         optn,
         lang,
-        strg,
         sond,
+        path,
+        scpt,
+        glob,
+        embi,
+        strg,
         audo,
     })
 }
 
 fn skip_chunk(cursor: &mut Cursor<&[u8]>) -> Result<(), DataLoadError> {
     let ident = cursor.read_ident()?;
-    warn!(
-        "Skipping {}{}{}{}",
-        ident[0] as char, ident[1] as char, ident[2] as char, ident[3] as char
-    );
     let size = cursor.read_u32()?;
+    warn!(
+        "Skipping {}{}{}{}. Size: {}",
+        ident[0] as char, ident[1] as char, ident[2] as char, ident[3] as char, size,
+    );
     cursor.set_position(cursor.position() + (size as u64));
     Ok(())
 }

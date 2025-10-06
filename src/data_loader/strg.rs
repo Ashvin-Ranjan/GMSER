@@ -22,7 +22,7 @@ pub fn deserialize_strg(cursor: &mut Cursor<&[u8]>) -> Result<StrgChunk, DataLoa
     let ident = cursor.read_ident()?;
 
     if ident != StrgChunk::IDENT {
-        return Result::Err(DataLoadError::UnexpectedIdent {
+        return Err(DataLoadError::UnexpectedIdent {
             pos: cursor.position() - 4,
             expected: StrgChunk::IDENT,
             actual: ident,
