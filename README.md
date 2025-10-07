@@ -33,11 +33,11 @@ TODOs:
     -   [ ] DAFL
     -   [x] EMBI (Required before running)
     -   [x] TPAG (Required before running)
-    -   [ ] TGIN (Required before running)
+    -   [x] TGIN (Required before running)
     -   [ ] CODE (Required before running)
     -   [ ] VARI (Required before running)
     -   [ ] FUNC (Required before running)
-    -   [ ] FEAT (Required before running)
+    -   [x] FEAT (Required before running)
     -   [x] STRG (Required before running)
     -   [x] TXTR (Required before running)
     -   [x] AUDO (Required before running)

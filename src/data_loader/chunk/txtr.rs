@@ -68,11 +68,7 @@ pub fn deserialize_txtr(cursor: &mut Cursor<&[u8]>) -> Result<TxtrChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let page_amount = cursor.read_u32()?;
-    let mut page_list = Vec::new();
-    for _ in 0..page_amount {
-        page_list.push(cursor.read_obj_pointer(deserialize_texture_page, 0)?);
-    }
+    let page_list = cursor.read_pointer_list(deserialize_texture_page, 0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 
@@ -87,14 +83,14 @@ fn deserialize_texture_page(cursor: &mut Cursor<&[u8]>) -> Result<TexturePage, D
     let texture_height = cursor.read_u32()?;
     let texture_group = cursor.read_u32()?;
     let texture = cursor.read_obj_pointer(deserialize_texture_item, 0)?;
-    return Ok(TexturePage {
+    Ok(TexturePage {
         scaled,
         generated_mips,
         texture_width,
         texture_height,
         texture_group,
         texture,
-    });
+    })
 }
 
 fn deserialize_texture_item(cursor: &mut Cursor<&[u8]>) -> Result<TextureData, DataLoadError> {

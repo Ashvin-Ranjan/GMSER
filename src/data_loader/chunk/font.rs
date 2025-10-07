@@ -71,11 +71,7 @@ pub fn deserialize_font(cursor: &mut Cursor<&[u8]>) -> Result<FontChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let font_amount = cursor.read_u32()?;
-    let mut fonts = Vec::new();
-    for _ in 0..font_amount {
-        fonts.push(cursor.read_obj_pointer(deserialize_font_obj, 0)?);
-    }
+    let fonts = cursor.read_pointer_list(deserialize_font_obj, 0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 
@@ -97,11 +93,7 @@ fn deserialize_font_obj(cursor: &mut Cursor<&[u8]>) -> Result<Font, DataLoadErro
     let scale_y = cursor.read_f32()?;
     let ascender_offset = cursor.read_u32()?;
     let ascender = cursor.read_u32()?;
-    let glyphs_count = cursor.read_u32()?;
-    let mut glyphs = Vec::new();
-    for _ in 0..glyphs_count {
-        glyphs.push(deserialize_glyph(cursor)?);
-    }
+    let glyphs = cursor.read_pointer_list(deserialize_glyph, 0)?;
 
     Ok(Font {
         name,

@@ -11,5 +11,6 @@ pub mod path;
 pub mod scpt;
 pub mod sond;
 pub mod strg;
+pub mod tgin;
 pub mod tpag;
 pub mod txtr;

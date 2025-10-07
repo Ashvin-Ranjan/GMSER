@@ -38,11 +38,7 @@ pub fn deserialize_agrp(cursor: &mut Cursor<&[u8]>) -> Result<AgrpChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let group_amount = cursor.read_u32()?;
-    let mut audio_groups = Vec::new();
-    for _ in 0..group_amount {
-        audio_groups.push(cursor.read_obj_pointer(deserialize_audio_group, 0)?);
-    }
+    let audio_groups = cursor.read_pointer_list(deserialize_audio_group, 0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 

@@ -16,6 +16,7 @@ use crate::data_loader::{
         scpt::{deserialize_scpt, ScptChunk},
         sond::{deserialize_sond, SondChunk},
         strg::{deserialize_strg, StrgChunk},
+        tgin::{deserialize_tgin, TginChunk},
         tpag::{deserialize_tpag, TpagChunk},
         txtr::{deserialize_txtr, TxtrChunk},
     },
@@ -35,6 +36,7 @@ pub struct FormChunk {
     pub font: FontChunk,
     pub embi: EmbiChunk,
     pub tpag: TpagChunk,
+    pub tgin: TginChunk,
     pub feat: FeatChunk,
     pub strg: StrgChunk,
     pub txtr: TxtrChunk,
@@ -93,8 +95,8 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
 
     let embi = deserialize_embi(&mut cursor)?;
     let tpag = deserialize_tpag(&mut cursor)?;
+    let tgin = deserialize_tgin(&mut cursor)?;
 
-    unloaded_data += skip_chunk(&mut cursor)?; // TGIN
     unloaded_data += skip_chunk(&mut cursor)?; // CODE
     unloaded_data += skip_chunk(&mut cursor)?; // VARI
     unloaded_data += skip_chunk(&mut cursor)?; // FUNC
@@ -127,6 +129,7 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
         font,
         embi,
         tpag,
+        tgin,
         feat,
         strg,
         txtr,

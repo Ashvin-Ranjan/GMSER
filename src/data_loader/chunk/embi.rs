@@ -57,3 +57,9 @@ pub fn deserialize_embi(cursor: &mut Cursor<&[u8]>) -> Result<EmbiChunk, DataLoa
 
     Ok(EmbiChunk { size, images })
 }
+
+fn deserialize_embedded_image(cursor: &mut Cursor<&[u8]>) -> Result<EmbeddedImage, DataLoadError> {
+    let name = cursor.read_obj_pointer(read_string_callback, 0)?;
+    let texture = cursor.read_obj_pointer(deserialize_texture, 0)?;
+    Ok(EmbeddedImage { name, texture })
+}

@@ -34,11 +34,7 @@ pub fn deserialize_tpag(cursor: &mut Cursor<&[u8]>) -> Result<TpagChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let texture_count = cursor.read_u32()?;
-    let mut textures = Vec::new();
-    for _ in 0..texture_count {
-        textures.push(cursor.read_obj_pointer(deserialize_texture, 0)?);
-    }
+    let textures = cursor.read_pointer_list(deserialize_texture, 0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 

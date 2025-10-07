@@ -36,6 +36,12 @@ pub trait CustomCursor {
         callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
         offset: u32,
     ) -> Result<HashMap<u32, T>, DataLoadError>;
+
+    fn read_pointer_list<T>(
+        &mut self,
+        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
+        offset: u32,
+    ) -> Result<Vec<T>, DataLoadError>;
 }
 
 impl CustomCursor for io::Cursor<&[u8]> {
@@ -161,6 +167,21 @@ impl CustomCursor for io::Cursor<&[u8]> {
             let key = self.read_u32()?;
             self.set_position(self.position() - 4);
             output.insert(key, self.read_obj_pointer(callback, offset)?);
+        }
+
+        Ok(output)
+    }
+
+    fn read_pointer_list<T>(
+        &mut self,
+        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
+        offset: u32,
+    ) -> Result<Vec<T>, DataLoadError> {
+        let number = self.read_u32()?;
+
+        let mut output = Vec::new();
+        for _ in 0..number {
+            output.push(self.read_obj_pointer(callback, offset)?);
         }
 
         Ok(output)

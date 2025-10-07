@@ -39,4 +39,6 @@ pub enum DataLoadError {
     InvalidTextureHeader { pos: u64, header: [u8; 8] },
     #[snafu(display("BZip2 Decompression Failure: `{source}`. (Position: {pos})"))]
     BZip2DecompressionError { source: io::Error, pos: u64 },
+    #[snafu(display("Invalid Texture Load Type: `{load_type}`. (Position: {pos})"))]
+    InvalidTextureLoadType { load_type: u32, pos: u64 },
 }

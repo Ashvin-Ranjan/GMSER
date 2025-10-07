@@ -33,11 +33,7 @@ pub fn deserialize_feat(cursor: &mut Cursor<&[u8]>) -> Result<FeatChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let feature_count = cursor.read_u32()?;
-    let mut features = Vec::new();
-    for _ in 0..feature_count {
-        features.push(cursor.read_obj_pointer(read_string_callback, 0)?);
-    }
+    let features = cursor.read_pointer_list(read_string_callback, 0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, false)?;
 

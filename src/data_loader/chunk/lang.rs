@@ -46,10 +46,7 @@ pub fn deserialize_lang(cursor: &mut Cursor<&[u8]>) -> Result<LangChunk, DataLoa
     let language_count = cursor.read_u32()?;
     let entry_count = cursor.read_u32()?;
 
-    let mut entry_ids = Vec::new();
-    for _ in 0..entry_count {
-        entry_ids.push(cursor.read_obj_pointer(read_string_callback, 0)?);
-    }
+    let entry_ids = cursor.read_pointer_list(read_string_callback, 0)?;
 
     let mut languages = Vec::new();
     for _ in 0..language_count {
