@@ -57,14 +57,14 @@ pub fn deserialize_sond(cursor: &mut Cursor<&[u8]>) -> Result<SondChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let sound_map = cursor.read_pointer_map(deserialze_sound, 0)?;
+    let sound_map = cursor.read_pointer_map(deserialize_sound, 0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 
     Ok(SondChunk { size, sound_map })
 }
 
-fn deserialze_sound(cursor: &mut Cursor<&[u8]>) -> Result<Sound, DataLoadError> {
+fn deserialize_sound(cursor: &mut Cursor<&[u8]>) -> Result<Sound, DataLoadError> {
     let name = cursor.read_obj_pointer(read_string_callback, 0)?;
     let flag_number = cursor.read_u32()?;
     let flag = SoundFlags::from_bits(flag_number).context(InvalidSoundFlagsSnafu {

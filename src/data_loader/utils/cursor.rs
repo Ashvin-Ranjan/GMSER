@@ -60,7 +60,7 @@ impl CustomCursor for io::Cursor<&[u8]> {
             name_bytes.push(b[0]);
         }
 
-        return String::from_utf8(name_bytes).context(StringDecodeSnafu { pos: start_pos });
+        String::from_utf8(name_bytes).context(StringDecodeSnafu { pos: start_pos })
     }
 
     fn read_u64(&mut self) -> Result<u64, DataLoadError> {
@@ -117,7 +117,7 @@ impl CustomCursor for io::Cursor<&[u8]> {
         offset: u32,
     ) -> Result<T, DataLoadError> {
         let location = self.read_u32()?;
-        if location <= 0 {
+        if location == 0 {
             return Err(DataLoadError::InvalidReadError {
                 pos: location as u64,
             });
@@ -139,7 +139,7 @@ impl CustomCursor for io::Cursor<&[u8]> {
         offset: u32,
     ) -> Result<Option<T>, DataLoadError> {
         let location = self.read_u32()?;
-        if location <= 0 {
+        if location == 0 {
             return Ok(None);
         }
 

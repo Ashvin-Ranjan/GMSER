@@ -53,7 +53,7 @@ pub fn deserialize_lang(cursor: &mut Cursor<&[u8]>) -> Result<LangChunk, DataLoa
 
     let mut languages = Vec::new();
     for _ in 0..language_count {
-        languages.push(deserialze_language(cursor, entry_count)?);
+        languages.push(deserialize_language(cursor, entry_count)?);
     }
 
     handle_cursor_alignment(cursor, start_pos, size as u64, false)?;
@@ -66,7 +66,7 @@ pub fn deserialize_lang(cursor: &mut Cursor<&[u8]>) -> Result<LangChunk, DataLoa
     })
 }
 
-fn deserialze_language(
+fn deserialize_language(
     cursor: &mut Cursor<&[u8]>,
     entry_count: u32,
 ) -> Result<Language, DataLoadError> {

@@ -20,6 +20,7 @@ fn main() {
             data.gen8.version_info.release,
             data.gen8.version_info.format,
         );
+        println!("{:#?}", data.agrp);
         // println!("{:#?}", data.scpt);
         // for (k, v) in data.strg.string_map.into_iter() {
         //     println!("{}: \"{}\"", k, v)

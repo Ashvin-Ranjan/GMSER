@@ -35,4 +35,8 @@ pub enum DataLoadError {
     InvalidFunctionClassifications { pos: u64, classifications: u64 },
     #[snafu(display("Attempting to read a pointer at {pos}."))]
     InvalidReadError { pos: u64 },
+    #[snafu(display("Invalid texture header at {pos}."))]
+    InvalidTextureHeader { pos: u64, header: [u8; 8] },
+    #[snafu(display("BZip2 Decompression Failure: `{source}`. (Position: {pos})"))]
+    BZip2DecompressionError { source: io::Error, pos: u64 },
 }

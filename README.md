@@ -6,40 +6,41 @@ TODOs:
     -   [ ] FORM
         -   [x] Basic Data
         -   [ ] Loading all chunks
-    -   [x] GEN8
+    -   [x] GEN8 (Required before running)
         -   [x] Add custom bitmap flags
     -   [x] OPTN
         -   [x] New Format
         -   [ ] Old Format
     -   [x] LANG
     -   [ ] EXTN
-    -   [x] SOND
-    -   [ ] AGRP
-    -   [ ] SPRT
+    -   [x] SOND (Required before running)
+    -   [x] AGRP (Required before running)
+        -   [ ] Loading `.dat` files (Not required)
+    -   [ ] SPRT (Required before running)
     -   [ ] BGND
     -   [x] PATH
-    -   [x] SCPT
-    -   [x] GLOB
+    -   [x] SCPT (Required before running)
+    -   [x] GLOB (Required before running)
     -   [ ] SHDR
-    -   [ ] FONT
+    -   [x] FONT (Required before running)
     -   [ ] TMLN
-    -   [ ] OBJT
+    -   [ ] OBJT (Required before running)
     -   [ ] FEDS
     -   [ ] ACRV
     -   [ ] SEQN
     -   [ ] TAGS
-    -   [ ] ROOM
+    -   [ ] ROOM (Required before running)
     -   [ ] DAFL
-    -   [ ] EMBI
-    -   [ ] TPAG
-    -   [ ] TGIN
-    -   [ ] CODE
-    -   [ ] VARI
-    -   [ ] FUNC
-    -   [ ] FEAT
-    -   [x] STRG
-    -   [ ] TXTR
-    -   [x] AUDO
+    -   [x] EMBI (Required before running)
+    -   [x] TPAG (Required before running)
+    -   [ ] TGIN (Required before running)
+    -   [ ] CODE (Required before running)
+    -   [ ] VARI (Required before running)
+    -   [ ] FUNC (Required before running)
+    -   [ ] FEAT (Required before running)
+    -   [x] STRG (Required before running)
+    -   [x] TXTR (Required before running)
+    -   [x] AUDO (Required before running)
 -   [ ] Running the game
     -   [ ] Opening the window
     -   [ ] Handling code execution

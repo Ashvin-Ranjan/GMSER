@@ -1,17 +1,24 @@
-use log::warn;
+use log::{info, warn};
 use std::io::Cursor;
 
 use crate::data_loader::{
-    audo::{deserialize_audo, AudoChunk},
-    embi::{deserialize_embi, EmbiChunk},
-    gen8::{deserialize_gen8, Gen8Chunk},
-    glob::{deserialize_glob, GlobChunk},
-    lang::{deserialize_lang, LangChunk},
-    optn::{deserialize_optn, OptnChunk},
-    path::{deserialize_path, PathChunk},
-    scpt::{deserialize_scpt, ScptChunk},
-    sond::{deserialize_sond, SondChunk},
-    strg::{deserialize_strg, StrgChunk},
+    chunk::{
+        agrp::{deserialize_agrp, AgrpChunk},
+        audo::{deserialize_audo, AudoChunk},
+        embi::{deserialize_embi, EmbiChunk},
+        feat::{deserialize_feat, FeatChunk},
+        font::{deserialize_font, FontChunk},
+        gen8::{deserialize_gen8, Gen8Chunk},
+        glob::{deserialize_glob, GlobChunk},
+        lang::{deserialize_lang, LangChunk},
+        optn::{deserialize_optn, OptnChunk},
+        path::{deserialize_path, PathChunk},
+        scpt::{deserialize_scpt, ScptChunk},
+        sond::{deserialize_sond, SondChunk},
+        strg::{deserialize_strg, StrgChunk},
+        tpag::{deserialize_tpag, TpagChunk},
+        txtr::{deserialize_txtr, TxtrChunk},
+    },
     utils::{cursor::CustomCursor, error::DataLoadError},
 };
 
@@ -21,11 +28,16 @@ pub struct FormChunk {
     pub optn: OptnChunk,
     pub lang: LangChunk,
     pub sond: SondChunk,
+    pub agrp: AgrpChunk,
     pub path: PathChunk,
     pub scpt: ScptChunk,
     pub glob: GlobChunk,
+    pub font: FontChunk,
     pub embi: EmbiChunk,
+    pub tpag: TpagChunk,
+    pub feat: FeatChunk,
     pub strg: StrgChunk,
+    pub txtr: TxtrChunk,
     pub audo: AudoChunk,
 }
 
@@ -48,47 +60,59 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
 
     let size = cursor.read_u32()?;
 
+    let mut unloaded_data = 0;
+
     let gen8 = deserialize_gen8(&mut cursor)?;
     let optn = deserialize_optn(&mut cursor)?;
     let lang = deserialize_lang(&mut cursor)?;
 
-    skip_chunk(&mut cursor)?; // EXTN
+    unloaded_data += skip_chunk(&mut cursor)?; // EXTN
 
     let sond = deserialize_sond(&mut cursor)?;
+    let agrp = deserialize_agrp(&mut cursor)?;
 
-    skip_chunk(&mut cursor)?; // AGRP
-    skip_chunk(&mut cursor)?; // SPRT
-    skip_chunk(&mut cursor)?; // BGND
+    unloaded_data += skip_chunk(&mut cursor)?; // SPRT
+    unloaded_data += skip_chunk(&mut cursor)?; // BGND
 
     let path = deserialize_path(&mut cursor)?;
     let scpt = deserialize_scpt(&mut cursor)?;
     let glob = deserialize_glob(&mut cursor)?;
 
-    skip_chunk(&mut cursor)?; // SHDR
-    skip_chunk(&mut cursor)?; // FONT
-    skip_chunk(&mut cursor)?; // TMLN
-    skip_chunk(&mut cursor)?; // OBJT
-    skip_chunk(&mut cursor)?; // FEDS
-    skip_chunk(&mut cursor)?; // ACRV
-    skip_chunk(&mut cursor)?; // SEQN
-    skip_chunk(&mut cursor)?; // TAGS
-    skip_chunk(&mut cursor)?; // ROOM
-    skip_chunk(&mut cursor)?; // DAFL
+    unloaded_data += skip_chunk(&mut cursor)?; // SHDR
+
+    let font = deserialize_font(&mut cursor)?;
+
+    unloaded_data += skip_chunk(&mut cursor)?; // TMLN
+    unloaded_data += skip_chunk(&mut cursor)?; // OBJT
+    unloaded_data += skip_chunk(&mut cursor)?; // FEDS
+    unloaded_data += skip_chunk(&mut cursor)?; // ACRV
+    unloaded_data += skip_chunk(&mut cursor)?; // SEQN
+    unloaded_data += skip_chunk(&mut cursor)?; // TAGS
+    unloaded_data += skip_chunk(&mut cursor)?; // ROOM
+    unloaded_data += skip_chunk(&mut cursor)?; // DAFL
 
     let embi = deserialize_embi(&mut cursor)?;
+    let tpag = deserialize_tpag(&mut cursor)?;
 
-    skip_chunk(&mut cursor)?; // TPAG
-    skip_chunk(&mut cursor)?; // TGIN
-    skip_chunk(&mut cursor)?; // CODE
-    skip_chunk(&mut cursor)?; // VARI
-    skip_chunk(&mut cursor)?; // FUNC
-    skip_chunk(&mut cursor)?; // FEAT
+    unloaded_data += skip_chunk(&mut cursor)?; // TGIN
+    unloaded_data += skip_chunk(&mut cursor)?; // CODE
+    unloaded_data += skip_chunk(&mut cursor)?; // VARI
+    unloaded_data += skip_chunk(&mut cursor)?; // FUNC
 
+    let feat = deserialize_feat(&mut cursor)?;
     let strg = deserialize_strg(&mut cursor)?;
-
-    skip_chunk(&mut cursor)?; // TXTR
-
+    let txtr = deserialize_txtr(&mut cursor)?;
     let audo = deserialize_audo(&mut cursor)?;
+
+    if unloaded_data > 0 {
+        warn!(
+            "{} bytes ({}%) of file not loaded!",
+            unloaded_data,
+            (100 * unloaded_data) as f32 / ((size + 8) as f32)
+        );
+    } else {
+        info!("All chunks loaded (you can remove `unloaded_data` now!)");
+    }
 
     Ok(FormChunk {
         size,
@@ -96,16 +120,21 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
         optn,
         lang,
         sond,
+        agrp,
         path,
         scpt,
         glob,
+        font,
         embi,
+        tpag,
+        feat,
         strg,
+        txtr,
         audo,
     })
 }
 
-fn skip_chunk(cursor: &mut Cursor<&[u8]>) -> Result<(), DataLoadError> {
+fn skip_chunk(cursor: &mut Cursor<&[u8]>) -> Result<u32, DataLoadError> {
     let ident = cursor.read_ident()?;
     let size = cursor.read_u32()?;
     warn!(
@@ -113,5 +142,5 @@ fn skip_chunk(cursor: &mut Cursor<&[u8]>) -> Result<(), DataLoadError> {
         ident[0] as char, ident[1] as char, ident[2] as char, ident[3] as char, size,
     );
     cursor.set_position(cursor.position() + (size as u64));
-    Ok(())
+    Ok(size + 8)
 }
