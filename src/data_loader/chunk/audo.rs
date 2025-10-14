@@ -6,14 +6,19 @@ use std::{
 };
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::{DataLoadError, IOSnafu},
 };
 
 #[derive(Debug)]
+pub struct Audio {
+    pub data: Vec<u8>,
+}
+
+#[derive(Debug)]
 pub struct AudoChunk {
     pub size: u32,
-    pub audio_map: HashMap<u32, Vec<u8>>,
+    pub audio_map: HashMap<u32, Audio>,
 }
 
 impl AudoChunk {
@@ -37,7 +42,7 @@ pub fn deserialize_audo(cursor: &mut Cursor<&[u8]>) -> Result<AudoChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let audio_map = cursor.read_pointer_map(deserialize_audio, 0)?;
+    let audio_map = cursor.read_pointer_map::<Audio>(0)?;
 
     warn!("We currently do not load the audio group files!");
 
@@ -46,12 +51,17 @@ pub fn deserialize_audo(cursor: &mut Cursor<&[u8]>) -> Result<AudoChunk, DataLoa
     Ok(AudoChunk { size, audio_map })
 }
 
-fn deserialize_audio(cursor: &mut Cursor<&[u8]>) -> Result<Vec<u8>, DataLoadError> {
-    let size = cursor.read_u32()?;
-    let start_pos = cursor.position();
-    let mut audio_buffer = vec![0u8; size as usize];
-    cursor
-        .read_exact(&mut audio_buffer)
-        .context(IOSnafu { pos: start_pos })?;
-    Ok(audio_buffer)
+impl Deserializable for Audio {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        let size = cursor.read_u32()?;
+        let start_pos = cursor.position();
+        let mut audio_buffer = vec![0u8; size as usize];
+        cursor
+            .read_exact(&mut audio_buffer)
+            .context(IOSnafu { pos: start_pos })?;
+        Ok(Audio { data: audio_buffer })
+    }
 }

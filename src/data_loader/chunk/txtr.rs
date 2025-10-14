@@ -4,7 +4,7 @@ use snafu::ResultExt;
 use std::io::{Cursor, Read};
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::{BZip2DecompressionSnafu, DataLoadError, IOSnafu},
 };
 
@@ -68,104 +68,114 @@ pub fn deserialize_txtr(cursor: &mut Cursor<&[u8]>) -> Result<TxtrChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let page_list = cursor.read_pointer_list(deserialize_texture_page, 0)?;
+    let page_list = cursor.read_pointer_list::<TexturePage>(0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 
     Ok(TxtrChunk { size, page_list })
 }
 
-fn deserialize_texture_page(cursor: &mut Cursor<&[u8]>) -> Result<TexturePage, DataLoadError> {
-    let scaled = cursor.read_u32()?;
-    let generated_mips = cursor.read_u32()?;
-    cursor.read_u32()?; // Discard size
-    let texture_width = cursor.read_u32()?;
-    let texture_height = cursor.read_u32()?;
-    let texture_group = cursor.read_u32()?;
-    let texture = cursor.read_obj_pointer(deserialize_texture_item, 0)?;
-    Ok(TexturePage {
-        scaled,
-        generated_mips,
-        texture_width,
-        texture_height,
-        texture_group,
-        texture,
-    })
+impl Deserializable for TexturePage {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        let scaled = cursor.read_u32()?;
+        let generated_mips = cursor.read_u32()?;
+        cursor.read_u32()?; // Discard size
+        let texture_width = cursor.read_u32()?;
+        let texture_height = cursor.read_u32()?;
+        let texture_group = cursor.read_u32()?;
+        let texture = cursor.read_obj_pointer::<TextureData>(0)?;
+        Ok(TexturePage {
+            scaled,
+            generated_mips,
+            texture_width,
+            texture_height,
+            texture_group,
+            texture,
+        })
+    }
 }
 
-fn deserialize_texture_item(cursor: &mut Cursor<&[u8]>) -> Result<TextureData, DataLoadError> {
-    let start_pos = cursor.position();
-    let mut header = [0u8; 8];
-    cursor
-        .read_exact(&mut header)
-        .context(IOSnafu { pos: start_pos })?;
-
-    if header[0..4] == TextureType::QOI_AND_BZIP2_HEADER {
-        cursor.set_position(cursor.position() - 4);
-        let qoi_width = Some(cursor.read_u16()?);
-        let qoi_height = Some(cursor.read_u16()?);
-        let qoi_length = Some(cursor.read_u32()?);
-        let mut decoder = BzDecoder::new(cursor);
-
-        // Decompress
-        let mut data = Vec::new();
-        decoder
-            .read_to_end(&mut data)
-            .context(BZip2DecompressionSnafu {
-                pos: start_pos + 12,
-            })?;
-
-        return Ok(TextureData {
-            texture_type: TextureType::QOIandBZip2,
-            data,
-            qoi_length,
-            qoi_height,
-            qoi_width,
-        });
-    } else if header[0..4] == TextureType::QOI_HEADER {
-        cursor.set_position(cursor.position() - 4);
-        let qoi_width = Some(cursor.read_u16()?);
-        let qoi_height = Some(cursor.read_u16()?);
-        let qoi_length = cursor.read_u32()?;
-        cursor.set_position(cursor.position() - 12);
-        let mut data = vec![0u8; qoi_length as usize + 12];
+impl Deserializable for TextureData {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        let start_pos = cursor.position();
+        let mut header = [0u8; 8];
         cursor
-            .read_exact(&mut data)
-            .context(IOSnafu { pos: start_pos + 8 })?;
-        return Ok(TextureData {
-            texture_type: TextureType::QOI,
-            data,
-            qoi_length: Some(qoi_length),
-            qoi_height,
-            qoi_width,
-        });
-    } else if header == TextureType::PNG_HEADER {
-        let mut chunk_type = 0;
-        while chunk_type != 0x444E4549
-        /* IEND */
-        {
-            let length = cursor.read_u32()?;
-            chunk_type = cursor.read_u32()?;
-            cursor.set_position(cursor.position() + (length as u64) + 4);
+            .read_exact(&mut header)
+            .context(IOSnafu { pos: start_pos })?;
+
+        if header[0..4] == TextureType::QOI_AND_BZIP2_HEADER {
+            cursor.set_position(cursor.position() - 4);
+            let qoi_width = Some(cursor.read_u16()?);
+            let qoi_height = Some(cursor.read_u16()?);
+            let qoi_length = Some(cursor.read_u32()?);
+            let mut decoder = BzDecoder::new(cursor);
+
+            // Decompress
+            let mut data = Vec::new();
+            decoder
+                .read_to_end(&mut data)
+                .context(BZip2DecompressionSnafu {
+                    pos: start_pos + 12,
+                })?;
+
+            return Ok(TextureData {
+                texture_type: TextureType::QOIandBZip2,
+                data,
+                qoi_length,
+                qoi_height,
+                qoi_width,
+            });
+        } else if header[0..4] == TextureType::QOI_HEADER {
+            cursor.set_position(cursor.position() - 4);
+            let qoi_width = Some(cursor.read_u16()?);
+            let qoi_height = Some(cursor.read_u16()?);
+            let qoi_length = cursor.read_u32()?;
+            cursor.set_position(cursor.position() - 12);
+            let mut data = vec![0u8; qoi_length as usize + 12];
+            cursor
+                .read_exact(&mut data)
+                .context(IOSnafu { pos: start_pos + 8 })?;
+            return Ok(TextureData {
+                texture_type: TextureType::QOI,
+                data,
+                qoi_length: Some(qoi_length),
+                qoi_height,
+                qoi_width,
+            });
+        } else if header == TextureType::PNG_HEADER {
+            let mut chunk_type = 0;
+            while chunk_type != 0x444E4549
+            /* IEND */
+            {
+                let length = cursor.read_u32()?;
+                chunk_type = cursor.read_u32()?;
+                cursor.set_position(cursor.position() + (length as u64) + 4);
+            }
+
+            let data_len = cursor.position() - (start_pos + 8);
+            cursor.set_position(start_pos + 8);
+            let mut data = vec![0u8; data_len as usize];
+            cursor
+                .read_exact(&mut data)
+                .context(IOSnafu { pos: start_pos + 8 })?;
+            return Ok(TextureData {
+                texture_type: TextureType::PNG,
+                data,
+                qoi_length: None,
+                qoi_height: None,
+                qoi_width: None,
+            });
         }
 
-        let data_len = cursor.position() - (start_pos + 8);
-        cursor.set_position(start_pos + 8);
-        let mut data = vec![0u8; data_len as usize];
-        cursor
-            .read_exact(&mut data)
-            .context(IOSnafu { pos: start_pos + 8 })?;
-        return Ok(TextureData {
-            texture_type: TextureType::PNG,
-            data,
-            qoi_length: None,
-            qoi_height: None,
-            qoi_width: None,
-        });
+        Err(DataLoadError::InvalidTextureHeader {
+            pos: start_pos,
+            header,
+        })
     }
-
-    Err(DataLoadError::InvalidTextureHeader {
-        pos: start_pos,
-        header,
-    })
 }

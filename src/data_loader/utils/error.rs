@@ -41,4 +41,16 @@ pub enum DataLoadError {
     BZip2DecompressionError { source: io::Error, pos: u64 },
     #[snafu(display("Invalid Texture Load Type: `{load_type}`. (Position: {pos})"))]
     InvalidTextureLoadType { load_type: u32, pos: u64 },
+    #[snafu(display("Invalid sprite sep masks type: `{mask_type}`. (Position: {pos})"))]
+    InvalidSepMasksType { mask_type: u32, pos: u64 },
+    #[snafu(display("Outdated sprite type: `{sprite_type}`. (Position: {pos})"))]
+    OutdatedSpriteType { sprite_type: u32, pos: u64 },
+    #[snafu(display("Outdated sprite version: `{sprite_version}`. (Position: {pos})"))]
+    OutdatedSpriteVersion { sprite_version: u32, pos: u64 },
+    #[snafu(display("Invalid playback speed type: `{speed_type}`. (Position: {pos})"))]
+    InvalidPlaybackSpeedType { speed_type: u32, pos: u64 },
+    #[snafu(display("Invalid Tile Mode: `{mode}`. (Position: {pos})"))]
+    InvalidTileMode { mode: u32, pos: u64 },
+    #[snafu(display("{message}. (Position: {pos})"))]
+    DebugError { message: String, pos: u64 },
 }

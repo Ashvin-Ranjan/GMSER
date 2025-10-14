@@ -4,7 +4,7 @@ use snafu::{OptionExt, ResultExt};
 use std::io::{Cursor, Read};
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor},
     error::{DataLoadError, IOSnafu, InvalidFunctionClassificationsSnafu, InvalidInfoFlagsSnafu},
 };
 
@@ -166,8 +166,8 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
     let disable_debug = cursor.read_boolean()?;
     let format_id = cursor.read_u8()?;
     let _unk1 = cursor.read_u16()?;
-    let filename = cursor.read_obj_pointer(read_string_callback, 0)?;
-    let config = cursor.read_obj_pointer(read_string_callback, 0)?;
+    let filename = cursor.read_obj_pointer::<String>(0)?;
+    let config = cursor.read_obj_pointer::<String>(0)?;
     let last_obj_id = cursor.read_u32()?;
     let last_tile_id = cursor.read_u32()?;
     let game_id = cursor.read_u32()?;
@@ -175,7 +175,7 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
     cursor
         .read_exact(&mut legacy_guid)
         .context(IOSnafu { pos: start_pos })?;
-    let game_name = cursor.read_obj_pointer(read_string_callback, 0)?;
+    let game_name = cursor.read_obj_pointer::<String>(0)?;
 
     let major_version = cursor.read_u32()?;
     let minor_version = cursor.read_u32()?;
@@ -206,7 +206,7 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
         .read_exact(&mut license_md5)
         .context(IOSnafu { pos: start_pos })?;
     let timestamp = cursor.read_u64()?;
-    let display_name = cursor.read_obj_pointer(read_string_callback, 0)?;
+    let display_name = cursor.read_obj_pointer::<String>(0)?;
     let active_targets = cursor.read_u64()?;
 
     let function_classifications_number = cursor.read_u64()?;

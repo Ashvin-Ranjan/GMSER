@@ -4,7 +4,7 @@ use snafu::OptionExt;
 use std::{collections::HashMap, io::Cursor};
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::{DataLoadError, InvalidSoundFlagsSnafu},
 };
 
@@ -57,37 +57,42 @@ pub fn deserialize_sond(cursor: &mut Cursor<&[u8]>) -> Result<SondChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let sound_map = cursor.read_pointer_map(deserialize_sound, 0)?;
+    let sound_map = cursor.read_pointer_map::<Sound>(0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 
     Ok(SondChunk { size, sound_map })
 }
 
-fn deserialize_sound(cursor: &mut Cursor<&[u8]>) -> Result<Sound, DataLoadError> {
-    let name = cursor.read_obj_pointer(read_string_callback, 0)?;
-    let flag_number = cursor.read_u32()?;
-    let flag = SoundFlags::from_bits(flag_number).context(InvalidSoundFlagsSnafu {
-        pos: cursor.position() - 4,
-        flag: flag_number,
-    })?;
-    let sound_type = cursor.read_opt_pointer(read_string_callback, 0)?;
-    let file = cursor.read_obj_pointer(read_string_callback, 0)?;
-    let effects = cursor.read_u32()?;
-    let volume = cursor.read_f32()?;
-    let pitch = cursor.read_f32()?;
-    let group_id = cursor.read_u32()?;
-    let audio_id = cursor.read_u32()?;
+impl Deserializable for Sound {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        let name = cursor.read_obj_pointer::<String>(0)?;
+        let flag_number = cursor.read_u32()?;
+        let flag = SoundFlags::from_bits(flag_number).context(InvalidSoundFlagsSnafu {
+            pos: cursor.position() - 4,
+            flag: flag_number,
+        })?;
+        let sound_type = cursor.read_opt_pointer::<String>(0)?;
+        let file = cursor.read_obj_pointer::<String>(0)?;
+        let effects = cursor.read_u32()?;
+        let volume = cursor.read_f32()?;
+        let pitch = cursor.read_f32()?;
+        let group_id = cursor.read_u32()?;
+        let audio_id = cursor.read_u32()?;
 
-    Ok(Sound {
-        name,
-        flag,
-        sound_type,
-        file,
-        effects,
-        volume,
-        pitch,
-        group_id,
-        audio_id,
-    })
+        Ok(Sound {
+            name,
+            flag,
+            sound_type,
+            file,
+            effects,
+            volume,
+            pitch,
+            group_id,
+            audio_id,
+        })
+    }
 }

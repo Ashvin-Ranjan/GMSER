@@ -4,7 +4,7 @@ use std::io::Cursor;
 use crate::data_loader::utils::{
     cursor::{handle_cursor_alignment, CustomCursor},
     error::DataLoadError,
-    texture::{deserialize_texture, TextureItem},
+    texture::TextureItem,
 };
 
 #[derive(Debug)]
@@ -34,7 +34,7 @@ pub fn deserialize_tpag(cursor: &mut Cursor<&[u8]>) -> Result<TpagChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let textures = cursor.read_pointer_list(deserialize_texture, 0)?;
+    let textures = cursor.read_pointer_list::<TextureItem>(0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 

@@ -15,6 +15,7 @@ use crate::data_loader::{
         path::{deserialize_path, PathChunk},
         scpt::{deserialize_scpt, ScptChunk},
         sond::{deserialize_sond, SondChunk},
+        sprt::{deserialize_sprt, SprtChunk},
         strg::{deserialize_strg, StrgChunk},
         tgin::{deserialize_tgin, TginChunk},
         tpag::{deserialize_tpag, TpagChunk},
@@ -30,6 +31,7 @@ pub struct FormChunk {
     pub lang: LangChunk,
     pub sond: SondChunk,
     pub agrp: AgrpChunk,
+    pub sprt: SprtChunk,
     pub path: PathChunk,
     pub scpt: ScptChunk,
     pub glob: GlobChunk,
@@ -72,8 +74,8 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
 
     let sond = deserialize_sond(&mut cursor)?;
     let agrp = deserialize_agrp(&mut cursor)?;
+    let sprt = deserialize_sprt(&mut cursor)?;
 
-    unloaded_data += skip_chunk(&mut cursor)?; // SPRT
     unloaded_data += skip_chunk(&mut cursor)?; // BGND
 
     let path = deserialize_path(&mut cursor)?;
@@ -123,6 +125,7 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
         lang,
         sond,
         agrp,
+        sprt,
         path,
         scpt,
         glob,

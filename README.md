@@ -16,7 +16,8 @@ TODOs:
     -   [x] SOND (Required before running)
     -   [x] AGRP (Required before running)
         -   [ ] Loading `.dat` files (Not required)
-    -   [ ] SPRT (Required before running)
+    -   [x] SPRT (Required before running)
+        -   [ ] Load sequence data
     -   [ ] BGND
     -   [x] PATH
     -   [x] SCPT (Required before running)

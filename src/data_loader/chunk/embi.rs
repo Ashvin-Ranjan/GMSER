@@ -2,9 +2,9 @@ use log::{info, warn};
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor},
     error::DataLoadError,
-    texture::{deserialize_texture, TextureItem},
+    texture::TextureItem,
 };
 
 #[derive(Debug)]
@@ -48,8 +48,8 @@ pub fn deserialize_embi(cursor: &mut Cursor<&[u8]>) -> Result<EmbiChunk, DataLoa
     let image_count = cursor.read_u32()?;
     let mut images = Vec::new();
     for _ in 0..image_count {
-        let name = cursor.read_obj_pointer(read_string_callback, 0)?;
-        let texture = cursor.read_obj_pointer(deserialize_texture, 0)?;
+        let name = cursor.read_obj_pointer::<String>(0)?;
+        let texture = cursor.read_obj_pointer::<TextureItem>(0)?;
         images.push(EmbeddedImage { name, texture })
     }
 
@@ -59,7 +59,7 @@ pub fn deserialize_embi(cursor: &mut Cursor<&[u8]>) -> Result<EmbiChunk, DataLoa
 }
 
 fn deserialize_embedded_image(cursor: &mut Cursor<&[u8]>) -> Result<EmbeddedImage, DataLoadError> {
-    let name = cursor.read_obj_pointer(read_string_callback, 0)?;
-    let texture = cursor.read_obj_pointer(deserialize_texture, 0)?;
+    let name = cursor.read_obj_pointer::<String>(0)?;
+    let texture = cursor.read_obj_pointer::<TextureItem>(0)?;
     Ok(EmbeddedImage { name, texture })
 }

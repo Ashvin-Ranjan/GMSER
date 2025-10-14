@@ -1,7 +1,7 @@
 use log::{info, warn};
 use snafu::ResultExt;
 use std::collections::HashMap;
-use std::io::{self, Read};
+use std::io::{Cursor, Read};
 
 use crate::data_loader::utils::error::StringDecodeSnafu;
 use crate::data_loader::utils::error::{DataLoadError, IOSnafu};
@@ -19,32 +19,24 @@ pub trait CustomCursor {
 
     fn read_boolean(&mut self) -> Result<bool, DataLoadError>;
 
-    fn read_obj_pointer<T>(
-        &mut self,
-        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
-        offset: u32,
-    ) -> Result<T, DataLoadError>;
+    fn read_obj_pointer<T>(&mut self, offset: u32) -> Result<T, DataLoadError>
+    where
+        T: Deserializable;
 
-    fn read_opt_pointer<T>(
-        &mut self,
-        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
-        offset: u32,
-    ) -> Result<Option<T>, DataLoadError>;
+    fn read_opt_pointer<T>(&mut self, offset: u32) -> Result<Option<T>, DataLoadError>
+    where
+        T: Deserializable;
 
-    fn read_pointer_map<T>(
-        &mut self,
-        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
-        offset: u32,
-    ) -> Result<HashMap<u32, T>, DataLoadError>;
+    fn read_pointer_map<T>(&mut self, offset: u32) -> Result<HashMap<u32, T>, DataLoadError>
+    where
+        T: Deserializable;
 
-    fn read_pointer_list<T>(
-        &mut self,
-        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
-        offset: u32,
-    ) -> Result<Vec<T>, DataLoadError>;
+    fn read_pointer_list<T>(&mut self, offset: u32) -> Result<Vec<T>, DataLoadError>
+    where
+        T: Deserializable;
 }
 
-impl CustomCursor for io::Cursor<&[u8]> {
+impl CustomCursor for Cursor<&[u8]> {
     fn read_ident(&mut self) -> Result<[u8; 4], DataLoadError> {
         let start_pos = self.position();
         let mut ident = [0u8; 4];
@@ -117,11 +109,10 @@ impl CustomCursor for io::Cursor<&[u8]> {
         Ok(bytes[0] != 0)
     }
 
-    fn read_obj_pointer<T>(
-        &mut self,
-        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
-        offset: u32,
-    ) -> Result<T, DataLoadError> {
+    fn read_obj_pointer<T>(&mut self, offset: u32) -> Result<T, DataLoadError>
+    where
+        T: Deserializable,
+    {
         let location = self.read_u32()?;
         if location == 0 {
             return Err(DataLoadError::InvalidReadError {
@@ -132,18 +123,17 @@ impl CustomCursor for io::Cursor<&[u8]> {
 
         self.set_position((location + offset) as u64);
 
-        let output = callback(self);
+        let output = T::deserialize(self);
 
         self.set_position(reset_pos);
 
         output
     }
 
-    fn read_opt_pointer<T>(
-        &mut self,
-        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
-        offset: u32,
-    ) -> Result<Option<T>, DataLoadError> {
+    fn read_opt_pointer<T>(&mut self, offset: u32) -> Result<Option<T>, DataLoadError>
+    where
+        T: Deserializable,
+    {
         let location = self.read_u32()?;
         if location == 0 {
             return Ok(None);
@@ -151,14 +141,13 @@ impl CustomCursor for io::Cursor<&[u8]> {
 
         self.set_position(self.position() - 4);
 
-        Ok(Some(self.read_obj_pointer(callback, offset)?))
+        Ok(Some(self.read_obj_pointer(offset)?))
     }
 
-    fn read_pointer_map<T>(
-        &mut self,
-        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
-        offset: u32,
-    ) -> Result<HashMap<u32, T>, DataLoadError> {
+    fn read_pointer_map<T>(&mut self, offset: u32) -> Result<HashMap<u32, T>, DataLoadError>
+    where
+        T: Deserializable,
+    {
         let number = self.read_u32()?;
 
         let mut output = HashMap::new();
@@ -166,34 +155,44 @@ impl CustomCursor for io::Cursor<&[u8]> {
         for _ in 0..number {
             let key = self.read_u32()?;
             self.set_position(self.position() - 4);
-            output.insert(key, self.read_obj_pointer(callback, offset)?);
+            output.insert(key, self.read_obj_pointer(offset)?);
         }
 
         Ok(output)
     }
 
-    fn read_pointer_list<T>(
-        &mut self,
-        callback: fn(&mut io::Cursor<&[u8]>) -> Result<T, DataLoadError>,
-        offset: u32,
-    ) -> Result<Vec<T>, DataLoadError> {
+    fn read_pointer_list<T>(&mut self, offset: u32) -> Result<Vec<T>, DataLoadError>
+    where
+        T: Deserializable,
+    {
         let number = self.read_u32()?;
 
         let mut output = Vec::new();
         for _ in 0..number {
-            output.push(self.read_obj_pointer(callback, offset)?);
+            output.push(self.read_obj_pointer(offset)?);
         }
 
         Ok(output)
     }
 }
 
-pub fn read_string_callback(cursor: &mut io::Cursor<&[u8]>) -> Result<String, DataLoadError> {
-    cursor.read_string()
+pub trait Deserializable {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized;
+}
+
+impl Deserializable for String {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        cursor.read_string()
+    }
 }
 
 pub fn handle_cursor_alignment(
-    cursor: &mut io::Cursor<&[u8]>,
+    cursor: &mut Cursor<&[u8]>,
     start_pos: u64,
     size: u64,
     exists_map: bool,

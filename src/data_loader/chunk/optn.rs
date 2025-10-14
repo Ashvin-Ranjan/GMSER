@@ -4,9 +4,9 @@ use snafu::OptionExt;
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor},
     error::{DataLoadError, InvalidOptionFlagsSnafu},
-    texture::{deserialize_texture, TextureItem},
+    texture::TextureItem,
 };
 
 // These flag values are directly taken from DogScepter
@@ -120,16 +120,16 @@ pub fn deserialize_optn(cursor: &mut Cursor<&[u8]>) -> Result<OptnChunk, DataLoa
     let vertex_sync = cursor.read_u32()?;
     let priority = cursor.read_u32()?;
 
-    let splash_back_image = cursor.read_opt_pointer(deserialize_texture, 0)?;
-    let splash_front_image = cursor.read_opt_pointer(deserialize_texture, 0)?;
-    let splash_load_image = cursor.read_opt_pointer(deserialize_texture, 0)?;
+    let splash_back_image = cursor.read_opt_pointer::<TextureItem>(0)?;
+    let splash_front_image = cursor.read_opt_pointer::<TextureItem>(0)?;
+    let splash_load_image = cursor.read_opt_pointer::<TextureItem>(0)?;
     let load_alpha = cursor.read_u32()?;
 
     let constants_amount = cursor.read_u32()?;
     let mut constants = Vec::new();
     for _ in 0..constants_amount {
-        let name = cursor.read_obj_pointer(read_string_callback, 0)?;
-        let value = cursor.read_obj_pointer(read_string_callback, 0)?;
+        let name = cursor.read_obj_pointer::<String>(0)?;
+        let value = cursor.read_obj_pointer::<String>(0)?;
         constants.push(Constant { name, value });
     }
 

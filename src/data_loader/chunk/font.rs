@@ -2,9 +2,9 @@ use log::info;
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
-    texture::{deserialize_texture, TextureItem},
+    texture::TextureItem,
 };
 
 #[derive(Debug)]
@@ -71,73 +71,83 @@ pub fn deserialize_font(cursor: &mut Cursor<&[u8]>) -> Result<FontChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let fonts = cursor.read_pointer_list(deserialize_font_obj, 0)?;
+    let fonts = cursor.read_pointer_list::<Font>(0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 
     Ok(FontChunk { size, fonts })
 }
 
-fn deserialize_font_obj(cursor: &mut Cursor<&[u8]>) -> Result<Font, DataLoadError> {
-    let name = cursor.read_obj_pointer(read_string_callback, 0)?;
-    let display_name = cursor.read_obj_pointer(read_string_callback, 0)?;
-    let size = -cursor.read_f32()?;
-    let bold = cursor.read_u32()? != 0;
-    let italic = cursor.read_u32()? != 0;
-    let range_start = cursor.read_u16()?;
-    let charset = cursor.read_u8()?;
-    let anti_alias = cursor.read_u8()?;
-    let range_end = cursor.read_u32()?;
-    let texture_item = cursor.read_obj_pointer(deserialize_texture, 0)?;
-    let scale_x = cursor.read_f32()?;
-    let scale_y = cursor.read_f32()?;
-    let ascender_offset = cursor.read_u32()?;
-    let ascender = cursor.read_u32()?;
-    let glyphs = cursor.read_pointer_list(deserialize_glyph, 0)?;
+impl Deserializable for Font {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        let name = cursor.read_obj_pointer::<String>(0)?;
+        let display_name = cursor.read_obj_pointer::<String>(0)?;
+        let size = -cursor.read_f32()?;
+        let bold = cursor.read_u32()? != 0;
+        let italic = cursor.read_u32()? != 0;
+        let range_start = cursor.read_u16()?;
+        let charset = cursor.read_u8()?;
+        let anti_alias = cursor.read_u8()?;
+        let range_end = cursor.read_u32()?;
+        let texture_item = cursor.read_obj_pointer::<TextureItem>(0)?;
+        let scale_x = cursor.read_f32()?;
+        let scale_y = cursor.read_f32()?;
+        let ascender_offset = cursor.read_u32()?;
+        let ascender = cursor.read_u32()?;
+        let glyphs = cursor.read_pointer_list::<Glyph>(0)?;
 
-    Ok(Font {
-        name,
-        display_name,
-        size,
-        bold,
-        italic,
-        range_start,
-        charset,
-        anti_alias,
-        range_end,
-        texture_item,
-        scale_x,
-        scale_y,
-        ascender_offset,
-        ascender,
-        glyphs,
-    })
+        Ok(Font {
+            name,
+            display_name,
+            size,
+            bold,
+            italic,
+            range_start,
+            charset,
+            anti_alias,
+            range_end,
+            texture_item,
+            scale_x,
+            scale_y,
+            ascender_offset,
+            ascender,
+            glyphs,
+        })
+    }
 }
 
-fn deserialize_glyph(cursor: &mut Cursor<&[u8]>) -> Result<Glyph, DataLoadError> {
-    let character = cursor.read_u16()?;
-    let x = cursor.read_u16()?;
-    let y = cursor.read_u16()?;
-    let width = cursor.read_u16()?;
-    let height = cursor.read_u16()?;
-    let shift = cursor.read_u16()?;
-    let offset = cursor.read_u16()?;
-    let kerning_amount = cursor.read_u16()?;
-    let mut kerning = Vec::new();
-    for _ in 0..kerning_amount {
-        let other = cursor.read_u16()?;
-        let amount = cursor.read_u16()?;
-        kerning.push(Kerning { other, amount });
-    }
+impl Deserializable for Glyph {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        let character = cursor.read_u16()?;
+        let x = cursor.read_u16()?;
+        let y = cursor.read_u16()?;
+        let width = cursor.read_u16()?;
+        let height = cursor.read_u16()?;
+        let shift = cursor.read_u16()?;
+        let offset = cursor.read_u16()?;
+        let kerning_amount = cursor.read_u16()?;
+        let mut kerning = Vec::new();
+        for _ in 0..kerning_amount {
+            let other = cursor.read_u16()?;
+            let amount = cursor.read_u16()?;
+            kerning.push(Kerning { other, amount });
+        }
 
-    Ok(Glyph {
-        character,
-        x,
-        y,
-        width,
-        height,
-        shift,
-        offset,
-        kerning,
-    })
+        Ok(Glyph {
+            character,
+            x,
+            y,
+            width,
+            height,
+            shift,
+            offset,
+            kerning,
+        })
+    }
 }

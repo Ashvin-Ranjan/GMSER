@@ -2,7 +2,7 @@ use log::info;
 use std::{collections::HashMap, io::Cursor};
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
 };
 
@@ -49,33 +49,38 @@ pub fn deserialize_path(cursor: &mut Cursor<&[u8]>) -> Result<PathChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let path_map = cursor.read_pointer_map(deserialize_path_obj, 0)?;
+    let path_map = cursor.read_pointer_map::<Path>(0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 
     Ok(PathChunk { size, path_map })
 }
 
-fn deserialize_path_obj(cursor: &mut Cursor<&[u8]>) -> Result<Path, DataLoadError> {
-    let name = cursor.read_obj_pointer(read_string_callback, 0)?;
-    let smooth = cursor.read_u32()? != 0;
-    let closed = cursor.read_u32()? != 0;
-    let precision = cursor.read_u32()?;
+impl Deserializable for Path {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        let name = cursor.read_obj_pointer::<String>(0)?;
+        let smooth = cursor.read_u32()? != 0;
+        let closed = cursor.read_u32()? != 0;
+        let precision = cursor.read_u32()?;
 
-    let num_points = cursor.read_u32()?;
-    let mut points = Vec::new();
-    for _ in 0..num_points {
-        let x = cursor.read_f32()?;
-        let y = cursor.read_f32()?;
-        let speed = cursor.read_f32()?;
-        points.push(Point { x, y, speed })
+        let num_points = cursor.read_u32()?;
+        let mut points = Vec::new();
+        for _ in 0..num_points {
+            let x = cursor.read_f32()?;
+            let y = cursor.read_f32()?;
+            let speed = cursor.read_f32()?;
+            points.push(Point { x, y, speed })
+        }
+
+        Ok(Path {
+            name,
+            smooth,
+            closed,
+            precision,
+            points,
+        })
     }
-
-    Ok(Path {
-        name,
-        smooth,
-        closed,
-        precision,
-        points,
-    })
 }

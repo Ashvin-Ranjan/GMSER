@@ -2,7 +2,7 @@ use log::info;
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
 };
 
@@ -38,15 +38,20 @@ pub fn deserialize_agrp(cursor: &mut Cursor<&[u8]>) -> Result<AgrpChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let audio_groups = cursor.read_pointer_list(deserialize_audio_group, 0)?;
+    let audio_groups = cursor.read_pointer_list::<AudioGroup>(0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 
     Ok(AgrpChunk { size, audio_groups })
 }
 
-fn deserialize_audio_group(cursor: &mut Cursor<&[u8]>) -> Result<AudioGroup, DataLoadError> {
-    let name = cursor.read_obj_pointer(read_string_callback, 0)?;
+impl Deserializable for AudioGroup {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        let name = cursor.read_obj_pointer::<String>(0)?;
 
-    Ok(AudioGroup { name })
+        Ok(AudioGroup { name })
+    }
 }

@@ -2,7 +2,7 @@ use log::info;
 use std::{collections::HashMap, io::Cursor};
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor},
     error::DataLoadError,
 };
 
@@ -33,7 +33,7 @@ pub fn deserialize_strg(cursor: &mut Cursor<&[u8]>) -> Result<StrgChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let string_map = cursor.read_pointer_map(read_string_callback, 4)?;
+    let string_map = cursor.read_pointer_map::<String>(4)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
 

@@ -2,7 +2,7 @@ use log::info;
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, read_string_callback, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor},
     error::DataLoadError,
 };
 
@@ -33,7 +33,7 @@ pub fn deserialize_feat(cursor: &mut Cursor<&[u8]>) -> Result<FeatChunk, DataLoa
 
     let start_pos = cursor.position();
 
-    let features = cursor.read_pointer_list(read_string_callback, 0)?;
+    let features = cursor.read_pointer_list::<String>(0)?;
 
     handle_cursor_alignment(cursor, start_pos, size as u64, false)?;
 
