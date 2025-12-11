@@ -147,15 +147,7 @@ impl Deserializable for Sprite {
 
         let playback_speed = cursor.read_f32()?;
 
-        let playback_type_num = cursor.read_u32()?;
-        let playback_speed_type = match playback_type_num {
-            0 => Ok(PlaybackSpeedType::FramesPerSecond),
-            1 => Ok(PlaybackSpeedType::FramesPerGameFrame),
-            _ => Err(DataLoadError::InvalidPlaybackSpeedType {
-                speed_type: playback_type_num,
-                pos: cursor.position() - 4,
-            }),
-        }?;
+        let playback_speed_type = PlaybackSpeedType::deserialize(cursor)?;
 
         let sequence = cursor.read_opt_pointer::<SpriteSequence>(0)?;
 

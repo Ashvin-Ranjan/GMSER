@@ -91,3 +91,20 @@ where
         })
     }
 }
+
+impl Deserializable for PlaybackSpeedType {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        let speed_type = cursor.read_u32()?;
+        match speed_type {
+            0 => Ok(PlaybackSpeedType::FramesPerSecond),
+            1 => Ok(PlaybackSpeedType::FramesPerGameFrame),
+            _ => Err(DataLoadError::InvalidPlaybackSpeedType {
+                speed_type: speed_type,
+                pos: cursor.position() - 4,
+            }),
+        }
+    }
+}

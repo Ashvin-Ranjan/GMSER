@@ -53,4 +53,10 @@ pub enum DataLoadError {
     InvalidTileMode { mode: u32, pos: u64 },
     #[snafu(display("{message}. (Position: {pos})"))]
     DebugError { message: String, pos: u64 },
+    #[snafu(display("Invalid room flags: `{flag}`. (Position: {pos})"))]
+    InvalidRoomFlags { pos: u64, flag: u32 },
+    #[snafu(display("Invalid layer kind: `{kind}`. (Position: {pos})"))]
+    InvalidLayerKind { pos: u64, kind: u32 },
+    #[snafu(display("Invalid effect property kind: `{kind}`. (Position: {pos})"))]
+    InvalidEffectPropertyKind { pos: u64, kind: u32 },
 }

@@ -15,6 +15,7 @@ pub trait CustomCursor {
     fn read_u32(&mut self) -> Result<u32, DataLoadError>;
     fn read_u16(&mut self) -> Result<u16, DataLoadError>;
     fn read_u8(&mut self) -> Result<u8, DataLoadError>;
+    fn read_i32(&mut self) -> Result<i32, DataLoadError>;
     fn read_f32(&mut self) -> Result<f32, DataLoadError>;
 
     fn read_boolean(&mut self) -> Result<bool, DataLoadError>;
@@ -99,6 +100,14 @@ impl CustomCursor for Cursor<&[u8]> {
         self.read_exact(&mut bytes)
             .context(IOSnafu { pos: start_pos })?;
         Ok(f32::from_le_bytes(bytes))
+    }
+
+    fn read_i32(&mut self) -> Result<i32, DataLoadError> {
+        let start_pos = self.position();
+        let mut bytes = [0u8; 4];
+        self.read_exact(&mut bytes)
+            .context(IOSnafu { pos: start_pos })?;
+        Ok(i32::from_le_bytes(bytes))
     }
 
     fn read_boolean(&mut self) -> Result<bool, DataLoadError> {

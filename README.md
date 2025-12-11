@@ -17,7 +17,7 @@ TODOs:
     -   [x] AGRP (Required before running)
         -   [ ] Loading `.dat` files (Not required)
     -   [x] SPRT (Required before running)
-        -   [ ] Load sequence data
+        -   [ ] Load sequence data (Not required)
     -   [ ] BGND
     -   [x] PATH
     -   [x] SCPT (Required before running)
@@ -30,7 +30,8 @@ TODOs:
     -   [ ] ACRV
     -   [ ] SEQN
     -   [ ] TAGS
-    -   [ ] ROOM (Required before running)
+    -   [x] ROOM (Required before running)
+        -   [ ] Handle additional layer types
     -   [ ] DAFL
     -   [x] EMBI (Required before running)
     -   [x] TPAG (Required before running)

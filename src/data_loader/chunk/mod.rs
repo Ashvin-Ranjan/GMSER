@@ -8,6 +8,7 @@ pub mod glob;
 pub mod lang;
 pub mod optn;
 pub mod path;
+pub mod room;
 pub mod scpt;
 pub mod sond;
 pub mod sprt;
