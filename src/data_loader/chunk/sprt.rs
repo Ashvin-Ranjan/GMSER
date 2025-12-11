@@ -108,9 +108,9 @@ impl Deserializable for Sprite {
         let margin_right = cursor.read_u32()?;
         let margin_bottom = cursor.read_u32()?;
         let margin_top = cursor.read_u32()?;
-        let transparent = cursor.read_u32()? != 0;
-        let smooth = cursor.read_u32()? != 0;
-        let preload = cursor.read_u32()? != 0;
+        let transparent = cursor.read_wide_boolean()?;
+        let smooth = cursor.read_wide_boolean()?;
+        let preload = cursor.read_wide_boolean()?;
         let bbox_mode = cursor.read_u32()?;
 
         let sep_masks_num = cursor.read_u32()?;
@@ -214,7 +214,7 @@ impl Deserializable for NineSlice {
         let top = cursor.read_u32()?;
         let right = cursor.read_u32()?;
         let bottom = cursor.read_u32()?;
-        let enabled = cursor.read_u32()? != 0;
+        let enabled = cursor.read_wide_boolean()?;
         let mut tile_modes = [const { TileMode::Hide }; 5];
         for i in 0..5 {
             let mode = cursor.read_u32()?;

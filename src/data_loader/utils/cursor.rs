@@ -19,6 +19,7 @@ pub trait CustomCursor {
     fn read_f32(&mut self) -> Result<f32, DataLoadError>;
 
     fn read_boolean(&mut self) -> Result<bool, DataLoadError>;
+    fn read_wide_boolean(&mut self) -> Result<bool, DataLoadError>;
 
     fn read_obj_pointer<T>(&mut self, offset: u32) -> Result<T, DataLoadError>
     where
@@ -118,6 +119,10 @@ impl CustomCursor for Cursor<&[u8]> {
         Ok(bytes[0] != 0)
     }
 
+    fn read_wide_boolean(&mut self) -> Result<bool, DataLoadError> {
+        Ok(self.read_u32()? != 0)
+    }
+
     fn read_obj_pointer<T>(&mut self, offset: u32) -> Result<T, DataLoadError>
     where
         T: Deserializable,
@@ -197,6 +202,18 @@ impl Deserializable for String {
         Self: Sized,
     {
         cursor.read_string()
+    }
+}
+
+impl<T> Deserializable for Vec<T>
+where
+    T: Deserializable,
+{
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        cursor.read_pointer_list::<T>(0)
     }
 }
 

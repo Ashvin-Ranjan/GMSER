@@ -59,4 +59,6 @@ pub enum DataLoadError {
     InvalidLayerKind { pos: u64, kind: u32 },
     #[snafu(display("Invalid effect property kind: `{kind}`. (Position: {pos})"))]
     InvalidEffectPropertyKind { pos: u64, kind: u32 },
+    #[snafu(display("Invalid collision shape kind: `{kind}`. (Position: {pos})"))]
+    InvalidCollisionShapeKind { pos: u64, kind: u32 },
 }

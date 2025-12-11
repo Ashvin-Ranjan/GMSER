@@ -100,8 +100,8 @@ impl Deserializable for Background {
     where
         Self: Sized,
     {
-        let enabled = cursor.read_u32()? != 0;
-        let foreground = cursor.read_u32()? != 0;
+        let enabled = cursor.read_wide_boolean()?;
+        let foreground = cursor.read_wide_boolean()?;
         let background_id = cursor.read_u32()?;
         let x = cursor.read_i32()?;
         let y = cursor.read_i32()?;
@@ -109,7 +109,7 @@ impl Deserializable for Background {
         let tile_y = cursor.read_i32()?;
         let speed_x = cursor.read_i32()?;
         let speed_y = cursor.read_i32()?;
-        let stretch = cursor.read_u32()? != 0;
+        let stretch = cursor.read_wide_boolean()?;
 
         Ok(Background {
             enabled,
@@ -131,7 +131,7 @@ impl Deserializable for View {
     where
         Self: Sized,
     {
-        let enabled = cursor.read_u32()? != 0;
+        let enabled = cursor.read_wide_boolean()?;
         let view_x = cursor.read_i32()?;
         let view_y = cursor.read_i32()?;
         let view_width = cursor.read_u32()?;

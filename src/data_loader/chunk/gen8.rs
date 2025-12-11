@@ -235,7 +235,7 @@ pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoa
     }
 
     let fps = cursor.read_f32()?;
-    let allow_statistics = cursor.read_u32()? != 0;
+    let allow_statistics = cursor.read_wide_boolean()?;
     let mut game_guid = [0u8; 16];
     cursor
         .read_exact(&mut game_guid)

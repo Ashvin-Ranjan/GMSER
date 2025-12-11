@@ -62,8 +62,8 @@ impl Deserializable for Path {
         Self: Sized,
     {
         let name = cursor.read_obj_pointer::<String>(0)?;
-        let smooth = cursor.read_u32()? != 0;
-        let closed = cursor.read_u32()? != 0;
+        let smooth = cursor.read_wide_boolean()?;
+        let closed = cursor.read_wide_boolean()?;
         let precision = cursor.read_u32()?;
 
         let num_points = cursor.read_u32()?;

@@ -119,8 +119,8 @@ impl Deserializable for Layer {
         let offset_y = cursor.read_f32()?;
         let h_speed = cursor.read_f32()?;
         let v_speed = cursor.read_f32()?;
-        let visible = cursor.read_u32()? != 0;
-        let effect_enabled = cursor.read_u32()? != 0;
+        let visible = cursor.read_wide_boolean()?;
+        let effect_enabled = cursor.read_wide_boolean()?;
         let effect_type = cursor.read_opt_pointer::<String>(0)?;
         let effect_properties = cursor.read_pointer_list::<EffectProperty>(0)?;
         let layer_kind = match kind {
@@ -183,12 +183,12 @@ impl Deserializable for LayerBackground {
     where
         Self: Sized,
     {
-        let visible = cursor.read_u32()? != 0;
-        let foreground = cursor.read_u32()? != 0;
+        let visible = cursor.read_wide_boolean()?;
+        let foreground = cursor.read_wide_boolean()?;
         let sprite_id = cursor.read_u32()?;
-        let tile_h = cursor.read_u32()? != 0;
-        let tile_v = cursor.read_u32()? != 0;
-        let stretch = cursor.read_u32()? != 0;
+        let tile_h = cursor.read_wide_boolean()?;
+        let tile_v = cursor.read_wide_boolean()?;
+        let stretch = cursor.read_wide_boolean()?;
         let color = cursor.read_u32()?;
         let first_frame = cursor.read_f32()?;
         let animation_speed = cursor.read_f32()?;

@@ -71,8 +71,8 @@ where
     {
         let key = cursor.read_f32()?;
         let length = cursor.read_f32()?;
-        let stretched = cursor.read_u32()? != 0;
-        let disabled = cursor.read_u32()? != 0;
+        let stretched = cursor.read_wide_boolean()?;
+        let disabled = cursor.read_wide_boolean()?;
 
         let count = cursor.read_u32()?;
         let mut channels = HashMap::new();

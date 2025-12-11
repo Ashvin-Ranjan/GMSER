@@ -6,6 +6,7 @@ pub mod font;
 pub mod gen8;
 pub mod glob;
 pub mod lang;
+pub mod objt;
 pub mod optn;
 pub mod path;
 pub mod room;

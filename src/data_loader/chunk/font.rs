@@ -86,8 +86,8 @@ impl Deserializable for Font {
         let name = cursor.read_obj_pointer::<String>(0)?;
         let display_name = cursor.read_obj_pointer::<String>(0)?;
         let size = -cursor.read_f32()?;
-        let bold = cursor.read_u32()? != 0;
-        let italic = cursor.read_u32()? != 0;
+        let bold = cursor.read_wide_boolean()?;
+        let italic = cursor.read_wide_boolean()?;
         let range_start = cursor.read_u16()?;
         let charset = cursor.read_u8()?;
         let anti_alias = cursor.read_u8()?;

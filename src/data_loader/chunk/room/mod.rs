@@ -100,9 +100,9 @@ impl Deserializable for Room {
         let width = cursor.read_u32()?;
         let height = cursor.read_u32()?;
         let speed = cursor.read_u32()?;
-        let persistent = cursor.read_u32()? != 0;
+        let persistent = cursor.read_wide_boolean()?;
         let background_color = cursor.read_u32()?;
-        let draw_background_color = cursor.read_u32()? != 0;
+        let draw_background_color = cursor.read_wide_boolean()?;
         let creation_code_id = cursor.read_u32()?;
         let room_flags_number = cursor.read_u32()? & !0x30000u32;
         let room_flags =
@@ -117,7 +117,7 @@ impl Deserializable for Room {
         let game_objects = read_pointer_list_ref::<GameObject>(cursor)?;
         let tiles = read_pointer_list_ref::<Tile>(cursor)?;
 
-        let physics = cursor.read_u32()? != 0;
+        let physics = cursor.read_wide_boolean()?;
         let top = cursor.read_u32()?;
         let left = cursor.read_u32()?;
         let right = cursor.read_u32()?;
