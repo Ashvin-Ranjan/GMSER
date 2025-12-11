@@ -72,28 +72,33 @@ impl SprtChunk {
     const IDENT: [u8; 4] = [0x53, 0x50, 0x52, 0x54]; // "SPRT"
 }
 
-pub fn deserialize_sprt(cursor: &mut Cursor<&[u8]>) -> Result<SprtChunk, DataLoadError> {
-    info!("Deserializing SPRT");
+impl Deserializable for SprtChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing SPRT");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != SprtChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: SprtChunk::IDENT,
-            actual: ident,
-        });
+        if ident != SprtChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: SprtChunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let sprites = cursor.read_pointer_list::<Sprite>(0)?;
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
+
+        Ok(SprtChunk { size, sprites })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let sprites = cursor.read_pointer_list::<Sprite>(0)?;
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
-
-    Ok(SprtChunk { size, sprites })
 }
 
 impl Deserializable for Sprite {

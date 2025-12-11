@@ -64,30 +64,35 @@ impl RoomChunk {
     const IDENT: [u8; 4] = [0x52, 0x4F, 0x4F, 0x4D]; // "ROOM"
 }
 
-pub fn deserialize_room(cursor: &mut Cursor<&[u8]>) -> Result<RoomChunk, DataLoadError> {
-    info!("Deserializing ROOM");
+impl Deserializable for RoomChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing ROOM");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != RoomChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: RoomChunk::IDENT,
-            actual: ident,
-        });
+        if ident != RoomChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: RoomChunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let rooms = cursor.read_pointer_list::<Room>(0)?;
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
+
+        warn!("We currently do not handle deserialization for various layer types!");
+
+        Ok(RoomChunk { size, rooms })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let rooms = cursor.read_pointer_list::<Room>(0)?;
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
-
-    warn!("We currently do not handle deserialization for various layer types!");
-
-    Ok(RoomChunk { size, rooms })
 }
 
 impl Deserializable for Room {

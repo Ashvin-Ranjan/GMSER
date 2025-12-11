@@ -4,7 +4,7 @@ use snafu::{OptionExt, ResultExt};
 use std::io::{Cursor, Read};
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::{DataLoadError, IOSnafu, InvalidFunctionClassificationsSnafu, InvalidInfoFlagsSnafu},
 };
 
@@ -146,136 +146,142 @@ impl Gen8Chunk {
     const IDENT: [u8; 4] = [0x47, 0x45, 0x4E, 0x38]; // "GEN8"
 }
 
-pub fn deserialize_gen8(cursor: &mut Cursor<&[u8]>) -> Result<Gen8Chunk, DataLoadError> {
-    info!("Deserializing GEN8");
+impl Deserializable for Gen8Chunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing GEN8");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != Gen8Chunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: Gen8Chunk::IDENT,
-            actual: ident,
-        });
+        if ident != Gen8Chunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: Gen8Chunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let disable_debug = cursor.read_boolean()?;
+        let format_id = cursor.read_u8()?;
+        let _unk1 = cursor.read_u16()?;
+        let filename = cursor.read_obj_pointer::<String>(0)?;
+        let config = cursor.read_obj_pointer::<String>(0)?;
+        let last_obj_id = cursor.read_u32()?;
+        let last_tile_id = cursor.read_u32()?;
+        let game_id = cursor.read_u32()?;
+        let mut legacy_guid = [0u8; 16];
+        cursor
+            .read_exact(&mut legacy_guid)
+            .context(IOSnafu { pos: start_pos })?;
+        let game_name = cursor.read_obj_pointer::<String>(0)?;
+
+        let major_version = cursor.read_u32()?;
+        let minor_version = cursor.read_u32()?;
+        let release_number = cursor.read_u32()?;
+        let build_number = cursor.read_u32()?;
+
+        if major_version < 2 || format_id < 17 {
+            return Err(DataLoadError::InvalidVersionError {
+                major: major_version,
+                minor: minor_version,
+                build: build_number,
+                release: release_number,
+            });
+        }
+
+        let default_window_width = cursor.read_u32()?;
+        let default_window_height = cursor.read_u32()?;
+
+        let info_flags_number = cursor.read_u32()?;
+        let info_flags =
+            InfoFlags::from_bits(info_flags_number).context(InvalidInfoFlagsSnafu {
+                pos: cursor.position() - 4,
+                flag: info_flags_number,
+            })?;
+
+        let license_crc2 = cursor.read_u32()?;
+        let mut license_md5 = [0u8; 16];
+        cursor
+            .read_exact(&mut license_md5)
+            .context(IOSnafu { pos: start_pos })?;
+        let timestamp = cursor.read_u64()?;
+        let display_name = cursor.read_obj_pointer::<String>(0)?;
+        let active_targets = cursor.read_u64()?;
+
+        let function_classifications_number = cursor.read_u64()?;
+        let function_classifications = FunctionClassifications::from_bits(
+            function_classifications_number,
+        )
+        .context(InvalidFunctionClassificationsSnafu {
+            pos: cursor.position() - 8,
+            classifications: function_classifications_number,
+        })?;
+
+        let steam_app_id = cursor.read_u32()?;
+        let debugger_port = cursor.read_u32()?;
+
+        let room_count = cursor.read_u32()?;
+        let mut room_order = Vec::new();
+        for _ in 0..room_count {
+            room_order.push(cursor.read_u32()?);
+        }
+
+        warn!("Missing Random GUID verification from Dog Scepter");
+        cursor.read_u64()?; // Throw this away for now
+        let mut random_uid = [0u64; 4];
+        for i in 0..4 {
+            random_uid[i] = cursor.read_u64()?;
+        }
+
+        let fps = cursor.read_f32()?;
+        let allow_statistics = cursor.read_wide_boolean()?;
+        let mut game_guid = [0u8; 16];
+        cursor
+            .read_exact(&mut game_guid)
+            .context(IOSnafu { pos: start_pos })?;
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, false)?;
+
+        Ok(Gen8Chunk {
+            size,
+            disable_debug,
+            version_info: VersionInfo {
+                major: major_version,
+                minor: minor_version,
+                build: build_number,
+                release: release_number,
+                format: format_id,
+            },
+            _unk1,
+            filename,
+            config,
+            last_obj_id,
+            last_tile_id,
+            game_id,
+            legacy_guid,
+            game_name,
+            default_window_width,
+            default_window_height,
+            info_flags,
+            license_crc2,
+            license_md5,
+            timestamp,
+            display_name,
+            active_targets,
+            function_classifications,
+            steam_app_id,
+            debugger_port,
+            room_order,
+            random_uid,
+            fps,
+            allow_statistics,
+            guid: game_guid,
+        })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let disable_debug = cursor.read_boolean()?;
-    let format_id = cursor.read_u8()?;
-    let _unk1 = cursor.read_u16()?;
-    let filename = cursor.read_obj_pointer::<String>(0)?;
-    let config = cursor.read_obj_pointer::<String>(0)?;
-    let last_obj_id = cursor.read_u32()?;
-    let last_tile_id = cursor.read_u32()?;
-    let game_id = cursor.read_u32()?;
-    let mut legacy_guid = [0u8; 16];
-    cursor
-        .read_exact(&mut legacy_guid)
-        .context(IOSnafu { pos: start_pos })?;
-    let game_name = cursor.read_obj_pointer::<String>(0)?;
-
-    let major_version = cursor.read_u32()?;
-    let minor_version = cursor.read_u32()?;
-    let release_number = cursor.read_u32()?;
-    let build_number = cursor.read_u32()?;
-
-    if major_version < 2 || format_id < 17 {
-        return Err(DataLoadError::InvalidVersionError {
-            major: major_version,
-            minor: minor_version,
-            build: build_number,
-            release: release_number,
-        });
-    }
-
-    let default_window_width = cursor.read_u32()?;
-    let default_window_height = cursor.read_u32()?;
-
-    let info_flags_number = cursor.read_u32()?;
-    let info_flags = InfoFlags::from_bits(info_flags_number).context(InvalidInfoFlagsSnafu {
-        pos: cursor.position() - 4,
-        flag: info_flags_number,
-    })?;
-
-    let license_crc2 = cursor.read_u32()?;
-    let mut license_md5 = [0u8; 16];
-    cursor
-        .read_exact(&mut license_md5)
-        .context(IOSnafu { pos: start_pos })?;
-    let timestamp = cursor.read_u64()?;
-    let display_name = cursor.read_obj_pointer::<String>(0)?;
-    let active_targets = cursor.read_u64()?;
-
-    let function_classifications_number = cursor.read_u64()?;
-    let function_classifications = FunctionClassifications::from_bits(
-        function_classifications_number,
-    )
-    .context(InvalidFunctionClassificationsSnafu {
-        pos: cursor.position() - 8,
-        classifications: function_classifications_number,
-    })?;
-
-    let steam_app_id = cursor.read_u32()?;
-    let debugger_port = cursor.read_u32()?;
-
-    let room_count = cursor.read_u32()?;
-    let mut room_order = Vec::new();
-    for _ in 0..room_count {
-        room_order.push(cursor.read_u32()?);
-    }
-
-    warn!("Missing Random GUID verification from Dog Scepter");
-    cursor.read_u64()?; // Throw this away for now
-    let mut random_uid = [0u64; 4];
-    for i in 0..4 {
-        random_uid[i] = cursor.read_u64()?;
-    }
-
-    let fps = cursor.read_f32()?;
-    let allow_statistics = cursor.read_wide_boolean()?;
-    let mut game_guid = [0u8; 16];
-    cursor
-        .read_exact(&mut game_guid)
-        .context(IOSnafu { pos: start_pos })?;
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, false)?;
-
-    Ok(Gen8Chunk {
-        size,
-        disable_debug,
-        version_info: VersionInfo {
-            major: major_version,
-            minor: minor_version,
-            build: build_number,
-            release: release_number,
-            format: format_id,
-        },
-        _unk1,
-        filename,
-        config,
-        last_obj_id,
-        last_tile_id,
-        game_id,
-        legacy_guid,
-        game_name,
-        default_window_width,
-        default_window_height,
-        info_flags,
-        license_crc2,
-        license_md5,
-        timestamp,
-        display_name,
-        active_targets,
-        function_classifications,
-        steam_app_id,
-        debugger_port,
-        room_order,
-        random_uid,
-        fps,
-        allow_statistics,
-        guid: game_guid,
-    })
 }

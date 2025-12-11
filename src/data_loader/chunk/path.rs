@@ -32,28 +32,33 @@ impl PathChunk {
     const IDENT: [u8; 4] = [0x50, 0x41, 0x54, 0x48]; // "PATH"
 }
 
-pub fn deserialize_path(cursor: &mut Cursor<&[u8]>) -> Result<PathChunk, DataLoadError> {
-    info!("Deserializing PATH");
+impl Deserializable for PathChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing PATH");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != PathChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: PathChunk::IDENT,
-            actual: ident,
-        });
+        if ident != PathChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: PathChunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let path_map = cursor.read_pointer_map::<Path>(0)?;
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
+
+        Ok(PathChunk { size, path_map })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let path_map = cursor.read_pointer_map::<Path>(0)?;
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
-
-    Ok(PathChunk { size, path_map })
 }
 
 impl Deserializable for Path {

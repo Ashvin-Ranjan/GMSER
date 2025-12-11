@@ -23,28 +23,33 @@ impl ScptChunk {
     const IDENT: [u8; 4] = [0x53, 0x43, 0x50, 0x54]; // "SCPT"
 }
 
-pub fn deserialize_scpt(cursor: &mut Cursor<&[u8]>) -> Result<ScptChunk, DataLoadError> {
-    info!("Deserializing SCPT");
+impl Deserializable for ScptChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing SCPT");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != ScptChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: ScptChunk::IDENT,
-            actual: ident,
-        });
+        if ident != ScptChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: ScptChunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let script_map = cursor.read_pointer_map::<Script>(0)?;
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
+
+        Ok(ScptChunk { size, script_map })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let script_map = cursor.read_pointer_map::<Script>(0)?;
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
-
-    Ok(ScptChunk { size, script_map })
 }
 
 impl Deserializable for Script {

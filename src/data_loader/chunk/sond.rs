@@ -40,28 +40,33 @@ impl SondChunk {
     const IDENT: [u8; 4] = [0x53, 0x4F, 0x4E, 0x44]; // "SOND"
 }
 
-pub fn deserialize_sond(cursor: &mut Cursor<&[u8]>) -> Result<SondChunk, DataLoadError> {
-    info!("Deserializing SOND");
+impl Deserializable for SondChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing SOND");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != SondChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: SondChunk::IDENT,
-            actual: ident,
-        });
+        if ident != SondChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: SondChunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let sound_map = cursor.read_pointer_map::<Sound>(0)?;
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
+
+        Ok(SondChunk { size, sound_map })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let sound_map = cursor.read_pointer_map::<Sound>(0)?;
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
-
-    Ok(SondChunk { size, sound_map })
 }
 
 impl Deserializable for Sound {

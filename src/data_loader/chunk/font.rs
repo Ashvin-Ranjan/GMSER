@@ -54,28 +54,33 @@ impl FontChunk {
     const IDENT: [u8; 4] = [0x46, 0x4F, 0x4E, 0x54]; // "FONT"
 }
 
-pub fn deserialize_font(cursor: &mut Cursor<&[u8]>) -> Result<FontChunk, DataLoadError> {
-    info!("Deserializing FONT");
+impl Deserializable for FontChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing FONT");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != FontChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: FontChunk::IDENT,
-            actual: ident,
-        });
+        if ident != FontChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: FontChunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let fonts = cursor.read_pointer_list::<Font>(0)?;
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
+
+        Ok(FontChunk { size, fonts })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let fonts = cursor.read_pointer_list::<Font>(0)?;
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
-
-    Ok(FontChunk { size, fonts })
 }
 
 impl Deserializable for Font {

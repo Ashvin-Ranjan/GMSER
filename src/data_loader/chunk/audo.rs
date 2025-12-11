@@ -24,31 +24,35 @@ pub struct AudoChunk {
 impl AudoChunk {
     const IDENT: [u8; 4] = [0x41, 0x55, 0x44, 0x4F]; // "AUDO"
 }
+impl Deserializable for AudoChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing AUDO");
 
-pub fn deserialize_audo(cursor: &mut Cursor<&[u8]>) -> Result<AudoChunk, DataLoadError> {
-    info!("Deserializing AUDO");
+        let ident = cursor.read_ident()?;
 
-    let ident = cursor.read_ident()?;
+        if ident != AudoChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: AudoChunk::IDENT,
+                actual: ident,
+            });
+        }
 
-    if ident != AudoChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: AudoChunk::IDENT,
-            actual: ident,
-        });
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let audio_map = cursor.read_pointer_map::<Audio>(0)?;
+
+        warn!("We currently do not load the audio group files!");
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
+
+        Ok(AudoChunk { size, audio_map })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let audio_map = cursor.read_pointer_map::<Audio>(0)?;
-
-    warn!("We currently do not load the audio group files!");
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
-
-    Ok(AudoChunk { size, audio_map })
 }
 
 impl Deserializable for Audio {

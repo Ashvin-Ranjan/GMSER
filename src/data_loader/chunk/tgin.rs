@@ -40,36 +40,41 @@ impl TginChunk {
     const IDENT: [u8; 4] = [0x54, 0x47, 0x49, 0x4E]; // "TGIN"
 }
 
-pub fn deserialize_tgin(cursor: &mut Cursor<&[u8]>) -> Result<TginChunk, DataLoadError> {
-    info!("Deserializing TGIN");
+impl Deserializable for TginChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing TGIN");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != TginChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: TginChunk::IDENT,
-            actual: ident,
-        });
+        if ident != TginChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: TginChunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let format_id = cursor.read_u32()?;
+        if format_id != 1 {
+            warn!("Encountered TGIN format id {}, treating as 1", format_id);
+        }
+
+        let texture_groups = cursor.read_pointer_list::<TextureGroupInfo>(0)?;
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
+
+        Ok(TginChunk {
+            size,
+            texture_groups,
+        })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let format_id = cursor.read_u32()?;
-    if format_id != 1 {
-        warn!("Encountered TGIN format id {}, treating as 1", format_id);
-    }
-
-    let texture_groups = cursor.read_pointer_list::<TextureGroupInfo>(0)?;
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
-
-    Ok(TginChunk {
-        size,
-        texture_groups,
-    })
 }
 
 impl Deserializable for TextureGroupInfo {

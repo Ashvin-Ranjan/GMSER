@@ -83,28 +83,33 @@ impl ObjtChunk {
     const IDENT: [u8; 4] = [0x4F, 0x42, 0x4A, 0x54]; // "OBJT"
 }
 
-pub fn deserialize_objt(cursor: &mut Cursor<&[u8]>) -> Result<ObjtChunk, DataLoadError> {
-    info!("Deserializing OBJT");
+impl Deserializable for ObjtChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing OBJT");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != ObjtChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: ObjtChunk::IDENT,
-            actual: ident,
-        });
+        if ident != ObjtChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: ObjtChunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let objects = cursor.read_pointer_list::<Object>(0)?;
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
+
+        Ok(ObjtChunk { size, objects })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let objects = cursor.read_pointer_list::<Object>(0)?;
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
-
-    Ok(ObjtChunk { size, objects })
 }
 
 impl Deserializable for Object {

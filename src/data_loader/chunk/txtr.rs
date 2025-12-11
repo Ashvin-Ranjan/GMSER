@@ -51,28 +51,33 @@ impl TextureType {
     const PNG_HEADER: [u8; 8] = [0x89, 0x50, 0x4E, 0x41, 0xD, 0x0A, 0x1A, 0x0A];
 }
 
-pub fn deserialize_txtr(cursor: &mut Cursor<&[u8]>) -> Result<TxtrChunk, DataLoadError> {
-    info!("Deserializing TXTR");
+impl Deserializable for TxtrChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing TXTR");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != TxtrChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: TxtrChunk::IDENT,
-            actual: ident,
-        });
+        if ident != TxtrChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: TxtrChunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let page_list = cursor.read_pointer_list::<TexturePage>(0)?;
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
+
+        Ok(TxtrChunk { size, page_list })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let page_list = cursor.read_pointer_list::<TexturePage>(0)?;
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, true)?;
-
-    Ok(TxtrChunk { size, page_list })
 }
 
 impl Deserializable for TexturePage {

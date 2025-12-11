@@ -2,7 +2,7 @@ use log::info;
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
 };
 
@@ -25,42 +25,47 @@ impl LangChunk {
     const IDENT: [u8; 4] = [0x4C, 0x41, 0x4E, 0x47]; // "LANG"
 }
 
-pub fn deserialize_lang(cursor: &mut Cursor<&[u8]>) -> Result<LangChunk, DataLoadError> {
-    info!("Deserializing LANG");
+impl Deserializable for LangChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing LANG");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != LangChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: LangChunk::IDENT,
-            actual: ident,
-        });
+        if ident != LangChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: LangChunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let _unk1 = cursor.read_u32()?;
+        let language_count = cursor.read_u32()?;
+        let entry_count = cursor.read_u32()?;
+
+        let entry_ids = cursor.read_pointer_list::<String>(0)?;
+
+        let mut languages = Vec::new();
+        for _ in 0..language_count {
+            languages.push(deserialize_language(cursor, entry_count)?);
+        }
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, false)?;
+
+        Ok(LangChunk {
+            size,
+            _unk1,
+            languages,
+            entry_ids,
+        })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let _unk1 = cursor.read_u32()?;
-    let language_count = cursor.read_u32()?;
-    let entry_count = cursor.read_u32()?;
-
-    let entry_ids = cursor.read_pointer_list::<String>(0)?;
-
-    let mut languages = Vec::new();
-    for _ in 0..language_count {
-        languages.push(deserialize_language(cursor, entry_count)?);
-    }
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, false)?;
-
-    Ok(LangChunk {
-        size,
-        _unk1,
-        languages,
-        entry_ids,
-    })
 }
 
 fn deserialize_language(

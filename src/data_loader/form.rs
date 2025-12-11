@@ -3,27 +3,15 @@ use std::io::Cursor;
 
 use crate::data_loader::{
     chunk::{
-        agrp::{deserialize_agrp, AgrpChunk},
-        audo::{deserialize_audo, AudoChunk},
-        embi::{deserialize_embi, EmbiChunk},
-        feat::{deserialize_feat, FeatChunk},
-        font::{deserialize_font, FontChunk},
-        gen8::{deserialize_gen8, Gen8Chunk},
-        glob::{deserialize_glob, GlobChunk},
-        lang::{deserialize_lang, LangChunk},
-        objt::{deserialize_objt, ObjtChunk},
-        optn::{deserialize_optn, OptnChunk},
-        path::{deserialize_path, PathChunk},
-        room::{deserialize_room, RoomChunk},
-        scpt::{deserialize_scpt, ScptChunk},
-        sond::{deserialize_sond, SondChunk},
-        sprt::{deserialize_sprt, SprtChunk},
-        strg::{deserialize_strg, StrgChunk},
-        tgin::{deserialize_tgin, TginChunk},
-        tpag::{deserialize_tpag, TpagChunk},
-        txtr::{deserialize_txtr, TxtrChunk},
+        agrp::AgrpChunk, audo::AudoChunk, embi::EmbiChunk, feat::FeatChunk, font::FontChunk,
+        gen8::Gen8Chunk, glob::GlobChunk, lang::LangChunk, objt::ObjtChunk, optn::OptnChunk,
+        path::PathChunk, room::RoomChunk, scpt::ScptChunk, sond::SondChunk, sprt::SprtChunk,
+        strg::StrgChunk, tgin::TginChunk, tpag::TpagChunk, txtr::TxtrChunk,
     },
-    utils::{cursor::CustomCursor, error::DataLoadError},
+    utils::{
+        cursor::{CustomCursor, Deserializable},
+        error::DataLoadError,
+    },
 };
 
 pub struct FormChunk {
@@ -70,51 +58,51 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
 
     let mut unloaded_data = 0;
 
-    let gen8 = deserialize_gen8(&mut cursor)?;
-    let optn = deserialize_optn(&mut cursor)?;
-    let lang = deserialize_lang(&mut cursor)?;
+    let gen8 = Gen8Chunk::deserialize(&mut cursor)?;
+    let optn = OptnChunk::deserialize(&mut cursor)?;
+    let lang = LangChunk::deserialize(&mut cursor)?;
 
     unloaded_data += skip_chunk(&mut cursor)?; // EXTN
 
-    let sond = deserialize_sond(&mut cursor)?;
-    let agrp = deserialize_agrp(&mut cursor)?;
-    let sprt = deserialize_sprt(&mut cursor)?;
+    let sond = SondChunk::deserialize(&mut cursor)?;
+    let agrp = AgrpChunk::deserialize(&mut cursor)?;
+    let sprt = SprtChunk::deserialize(&mut cursor)?;
 
     unloaded_data += skip_chunk(&mut cursor)?; // BGND
 
-    let path = deserialize_path(&mut cursor)?;
-    let scpt = deserialize_scpt(&mut cursor)?;
-    let glob = deserialize_glob(&mut cursor)?;
+    let path = PathChunk::deserialize(&mut cursor)?;
+    let scpt = ScptChunk::deserialize(&mut cursor)?;
+    let glob = GlobChunk::deserialize(&mut cursor)?;
 
     unloaded_data += skip_chunk(&mut cursor)?; // SHDR
 
-    let font = deserialize_font(&mut cursor)?;
+    let font = FontChunk::deserialize(&mut cursor)?;
 
     unloaded_data += skip_chunk(&mut cursor)?; // TMLN
 
-    let objt = deserialize_objt(&mut cursor)?;
+    let objt = ObjtChunk::deserialize(&mut cursor)?;
 
     unloaded_data += skip_chunk(&mut cursor)?; // FEDS
     unloaded_data += skip_chunk(&mut cursor)?; // ACRV
     unloaded_data += skip_chunk(&mut cursor)?; // SEQN
     unloaded_data += skip_chunk(&mut cursor)?; // TAGS
 
-    let room = deserialize_room(&mut cursor)?;
+    let room = RoomChunk::deserialize(&mut cursor)?;
 
     unloaded_data += skip_chunk(&mut cursor)?; // DAFL
 
-    let embi = deserialize_embi(&mut cursor)?;
-    let tpag = deserialize_tpag(&mut cursor)?;
-    let tgin = deserialize_tgin(&mut cursor)?;
+    let embi = EmbiChunk::deserialize(&mut cursor)?;
+    let tpag = TpagChunk::deserialize(&mut cursor)?;
+    let tgin = TginChunk::deserialize(&mut cursor)?;
 
     unloaded_data += skip_chunk(&mut cursor)?; // CODE
     unloaded_data += skip_chunk(&mut cursor)?; // VARI
     unloaded_data += skip_chunk(&mut cursor)?; // FUNC
 
-    let feat = deserialize_feat(&mut cursor)?;
-    let strg = deserialize_strg(&mut cursor)?;
-    let txtr = deserialize_txtr(&mut cursor)?;
-    let audo = deserialize_audo(&mut cursor)?;
+    let feat = FeatChunk::deserialize(&mut cursor)?;
+    let strg = StrgChunk::deserialize(&mut cursor)?;
+    let txtr = TxtrChunk::deserialize(&mut cursor)?;
+    let audo = AudoChunk::deserialize(&mut cursor)?;
 
     if unloaded_data > 0 {
         warn!(

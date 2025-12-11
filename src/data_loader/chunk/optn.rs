@@ -4,7 +4,7 @@ use snafu::OptionExt;
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
-    cursor::{handle_cursor_alignment, CustomCursor},
+    cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::{DataLoadError, InvalidOptionFlagsSnafu},
     texture::TextureItem,
 };
@@ -77,79 +77,84 @@ impl OptnChunk {
     const IDENT: [u8; 4] = [0x4F, 0x50, 0x54, 0x4E]; // "OPTN"
 }
 
-pub fn deserialize_optn(cursor: &mut Cursor<&[u8]>) -> Result<OptnChunk, DataLoadError> {
-    info!("Deserializing OPTN");
+impl Deserializable for OptnChunk {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        info!("Deserializing OPTN");
 
-    let ident = cursor.read_ident()?;
+        let ident = cursor.read_ident()?;
 
-    if ident != OptnChunk::IDENT {
-        return Err(DataLoadError::UnexpectedIdent {
-            pos: cursor.position() - 4,
-            expected: OptnChunk::IDENT,
-            actual: ident,
-        });
+        if ident != OptnChunk::IDENT {
+            return Err(DataLoadError::UnexpectedIdent {
+                pos: cursor.position() - 4,
+                expected: OptnChunk::IDENT,
+                actual: ident,
+            });
+        }
+
+        let size = cursor.read_u32()?;
+
+        let start_pos = cursor.position();
+
+        let option_version = cursor.read_u32()?;
+
+        if option_version != 0x80000000 {
+            return Err(DataLoadError::UnsupportedOptionVerion {
+                pos: cursor.position() - 4,
+                version: option_version,
+            });
+        }
+
+        let _unk1 = cursor.read_u32()?;
+
+        let option_flags_number = cursor.read_u64()?;
+        let option_flags =
+            OptionFlags::from_bits(option_flags_number).context(InvalidOptionFlagsSnafu {
+                pos: cursor.position() - 8,
+                flag: option_flags_number,
+            })?;
+
+        let scale = cursor.read_u32()?;
+        let window_color = cursor.read_u32()?;
+        let color_depth = cursor.read_u32()?;
+        let resolution = cursor.read_u32()?;
+        let frequency = cursor.read_u32()?;
+        let vertex_sync = cursor.read_u32()?;
+        let priority = cursor.read_u32()?;
+
+        let splash_back_image = cursor.read_opt_pointer::<TextureItem>(0)?;
+        let splash_front_image = cursor.read_opt_pointer::<TextureItem>(0)?;
+        let splash_load_image = cursor.read_opt_pointer::<TextureItem>(0)?;
+        let load_alpha = cursor.read_u32()?;
+
+        let constants_amount = cursor.read_u32()?;
+        let mut constants = Vec::new();
+        for _ in 0..constants_amount {
+            let name = cursor.read_obj_pointer::<String>(0)?;
+            let value = cursor.read_obj_pointer::<String>(0)?;
+            constants.push(Constant { name, value });
+        }
+
+        handle_cursor_alignment(cursor, start_pos, size as u64, false)?;
+
+        Ok(OptnChunk {
+            size,
+            _unk1,
+            option_flags,
+            scale,
+            window_color,
+            color_depth,
+            resolution,
+            frequency,
+            vertex_sync,
+            priority,
+            splash_back_image,
+            splash_front_image,
+            splash_load_image,
+            load_alpha,
+            constants,
+        })
     }
-
-    let size = cursor.read_u32()?;
-
-    let start_pos = cursor.position();
-
-    let option_version = cursor.read_u32()?;
-
-    if option_version != 0x80000000 {
-        return Err(DataLoadError::UnsupportedOptionVerion {
-            pos: cursor.position() - 4,
-            version: option_version,
-        });
-    }
-
-    let _unk1 = cursor.read_u32()?;
-
-    let option_flags_number = cursor.read_u64()?;
-    let option_flags =
-        OptionFlags::from_bits(option_flags_number).context(InvalidOptionFlagsSnafu {
-            pos: cursor.position() - 8,
-            flag: option_flags_number,
-        })?;
-
-    let scale = cursor.read_u32()?;
-    let window_color = cursor.read_u32()?;
-    let color_depth = cursor.read_u32()?;
-    let resolution = cursor.read_u32()?;
-    let frequency = cursor.read_u32()?;
-    let vertex_sync = cursor.read_u32()?;
-    let priority = cursor.read_u32()?;
-
-    let splash_back_image = cursor.read_opt_pointer::<TextureItem>(0)?;
-    let splash_front_image = cursor.read_opt_pointer::<TextureItem>(0)?;
-    let splash_load_image = cursor.read_opt_pointer::<TextureItem>(0)?;
-    let load_alpha = cursor.read_u32()?;
-
-    let constants_amount = cursor.read_u32()?;
-    let mut constants = Vec::new();
-    for _ in 0..constants_amount {
-        let name = cursor.read_obj_pointer::<String>(0)?;
-        let value = cursor.read_obj_pointer::<String>(0)?;
-        constants.push(Constant { name, value });
-    }
-
-    handle_cursor_alignment(cursor, start_pos, size as u64, false)?;
-
-    Ok(OptnChunk {
-        size,
-        _unk1,
-        option_flags,
-        scale,
-        window_color,
-        color_depth,
-        resolution,
-        frequency,
-        vertex_sync,
-        priority,
-        splash_back_image,
-        splash_front_image,
-        splash_load_image,
-        load_alpha,
-        constants,
-    })
 }
