@@ -1,5 +1,6 @@
 pub mod agrp;
 pub mod audo;
+pub mod code;
 pub mod embi;
 pub mod feat;
 pub mod font;

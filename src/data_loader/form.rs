@@ -3,10 +3,10 @@ use std::io::Cursor;
 
 use crate::data_loader::{
     chunk::{
-        agrp::AgrpChunk, audo::AudoChunk, embi::EmbiChunk, feat::FeatChunk, font::FontChunk,
-        gen8::Gen8Chunk, glob::GlobChunk, lang::LangChunk, objt::ObjtChunk, optn::OptnChunk,
-        path::PathChunk, room::RoomChunk, scpt::ScptChunk, sond::SondChunk, sprt::SprtChunk,
-        strg::StrgChunk, tgin::TginChunk, tpag::TpagChunk, txtr::TxtrChunk,
+        agrp::AgrpChunk, audo::AudoChunk, code::CodeChunk, embi::EmbiChunk, feat::FeatChunk,
+        font::FontChunk, gen8::Gen8Chunk, glob::GlobChunk, lang::LangChunk, objt::ObjtChunk,
+        optn::OptnChunk, path::PathChunk, room::RoomChunk, scpt::ScptChunk, sond::SondChunk,
+        sprt::SprtChunk, strg::StrgChunk, tgin::TginChunk, tpag::TpagChunk, txtr::TxtrChunk,
     },
     utils::{
         cursor::{CustomCursor, Deserializable},
@@ -31,6 +31,7 @@ pub struct FormChunk {
     pub embi: EmbiChunk,
     pub tpag: TpagChunk,
     pub tgin: TginChunk,
+    pub code: CodeChunk,
     pub feat: FeatChunk,
     pub strg: StrgChunk,
     pub txtr: TxtrChunk,
@@ -94,8 +95,8 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
     let embi = EmbiChunk::deserialize(&mut cursor)?;
     let tpag = TpagChunk::deserialize(&mut cursor)?;
     let tgin = TginChunk::deserialize(&mut cursor)?;
+    let code = CodeChunk::deserialize(&mut cursor)?;
 
-    unloaded_data += skip_chunk(&mut cursor)?; // CODE
     unloaded_data += skip_chunk(&mut cursor)?; // VARI
     unloaded_data += skip_chunk(&mut cursor)?; // FUNC
 
@@ -131,6 +132,7 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
         embi,
         tpag,
         tgin,
+        code,
         feat,
         strg,
         txtr,

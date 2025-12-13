@@ -25,7 +25,7 @@ TODOs:
     -   [ ] SHDR
     -   [x] FONT (Required before running)
     -   [ ] TMLN
-    -   [ ] OBJT (Required before running)
+    -   [x] OBJT (Required before running)
     -   [ ] FEDS
     -   [ ] ACRV
     -   [ ] SEQN
@@ -36,7 +36,7 @@ TODOs:
     -   [x] EMBI (Required before running)
     -   [x] TPAG (Required before running)
     -   [x] TGIN (Required before running)
-    -   [ ] CODE (Required before running)
+    -   [x] CODE (Required before running)
     -   [ ] VARI (Required before running)
     -   [ ] FUNC (Required before running)
     -   [x] FEAT (Required before running)

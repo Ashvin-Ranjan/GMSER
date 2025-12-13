@@ -18,7 +18,30 @@ pub struct Object {
     pub parent_object_id: u32,
     pub mask_sprite_id: u32,
     pub physics: ObjectPhysics,
-    pub events: Vec<Vec<Event>>,
+    pub events: ObjectEvents,
+}
+
+#[derive(Debug)]
+pub struct ObjectEvents {
+    pub create: Vec<Event>,
+    pub destroy: Vec<Event>,
+    pub alarm: Vec<Event>,
+    pub step: Vec<Event>,
+    pub collision: Vec<Event>,
+    pub keyboard: Vec<Event>,
+    pub mouse: Vec<Event>,
+    pub other: Vec<Event>,
+    pub draw: Vec<Event>,
+    pub key_press: Vec<Event>,
+    pub key_release: Vec<Event>,
+    pub trigger: Vec<Event>,
+    pub clean_up: Vec<Event>,
+    pub gesture: Vec<Event>,
+    pub pre_create: Vec<Event>,
+}
+
+impl ObjectEvents {
+    const NUM_ARRAYS: usize = 15;
 }
 
 #[derive(Debug)]
@@ -50,13 +73,13 @@ pub struct PhysicsVertex {
     pub y: f32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Event {
     pub subtype: u32,
     pub actions: Vec<Action>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Action {
     pub lib_id: u32,
     pub id: u32,
@@ -127,7 +150,7 @@ impl Deserializable for Object {
         let parent_object_id = cursor.read_u32()?;
         let mask_sprite_id = cursor.read_u32()?;
         let physics = ObjectPhysics::deserialize(cursor)?;
-        let events = Vec::<Vec<Event>>::deserialize(cursor)?;
+        let events = ObjectEvents::deserialize(cursor)?;
 
         Ok(Object {
             name,
@@ -261,6 +284,41 @@ impl Deserializable for Action {
             who,
             relative,
             is_not,
+        })
+    }
+}
+
+impl Deserializable for ObjectEvents {
+    fn deserialize(cursor: &mut Cursor<&[u8]>) -> Result<Self, DataLoadError>
+    where
+        Self: Sized,
+    {
+        let start_pos = cursor.position();
+        let events = Vec::<Vec<Event>>::deserialize(cursor)?;
+        if events.len() != ObjectEvents::NUM_ARRAYS {
+            return Err(DataLoadError::InvalidEventArrayLength {
+                pos: start_pos,
+                actual: events.len(),
+                correct: ObjectEvents::NUM_ARRAYS,
+            });
+        }
+
+        Ok(ObjectEvents {
+            create: events[0].clone(),
+            destroy: events[1].clone(),
+            alarm: events[2].clone(),
+            step: events[3].clone(),
+            collision: events[4].clone(),
+            keyboard: events[5].clone(),
+            mouse: events[6].clone(),
+            other: events[7].clone(),
+            draw: events[8].clone(),
+            key_press: events[9].clone(),
+            key_release: events[10].clone(),
+            trigger: events[11].clone(),
+            clean_up: events[12].clone(),
+            gesture: events[13].clone(),
+            pre_create: events[14].clone(),
         })
     }
 }

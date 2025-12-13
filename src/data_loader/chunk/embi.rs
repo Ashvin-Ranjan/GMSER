@@ -62,9 +62,3 @@ impl Deserializable for EmbiChunk {
         Ok(EmbiChunk { size, images })
     }
 }
-
-fn deserialize_embedded_image(cursor: &mut Cursor<&[u8]>) -> Result<EmbeddedImage, DataLoadError> {
-    let name = cursor.read_obj_pointer::<String>(0)?;
-    let texture = cursor.read_obj_pointer::<TextureItem>(0)?;
-    Ok(EmbeddedImage { name, texture })
-}

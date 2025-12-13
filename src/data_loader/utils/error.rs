@@ -61,4 +61,12 @@ pub enum DataLoadError {
     InvalidEffectPropertyKind { pos: u64, kind: u32 },
     #[snafu(display("Invalid collision shape kind: `{kind}`. (Position: {pos})"))]
     InvalidCollisionShapeKind { pos: u64, kind: u32 },
+    #[snafu(display(
+        "Invalid event array length. Got `{actual}` expected `{correct}`. (Position: {pos})"
+    ))]
+    InvalidEventArrayLength {
+        pos: u64,
+        actual: usize,
+        correct: usize,
+    },
 }
