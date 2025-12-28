@@ -2,6 +2,7 @@ use log::info;
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
     texture::TextureItem,
@@ -50,7 +51,7 @@ pub struct FontChunk {
     pub fonts: Vec<Font>,
 }
 
-impl FontChunk {
+impl Chunk for FontChunk {
     const IDENT: [u8; 4] = [0x46, 0x4F, 0x4E, 0x54]; // "FONT"
 }
 

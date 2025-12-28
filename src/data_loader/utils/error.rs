@@ -69,4 +69,6 @@ pub enum DataLoadError {
         actual: usize,
         correct: usize,
     },
+    #[snafu(display("Could not find chunk ident."))]
+    MissingChunkIdent { ident: [u8; 4] },
 }

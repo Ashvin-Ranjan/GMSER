@@ -2,6 +2,7 @@ use log::info;
 use std::{collections::HashMap, io::Cursor};
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
 };
@@ -12,7 +13,7 @@ pub struct StrgChunk {
     pub string_map: HashMap<u32, String>,
 }
 
-impl StrgChunk {
+impl Chunk for StrgChunk {
     const IDENT: [u8; 4] = [0x53, 0x54, 0x52, 0x47]; // "STRG"
 }
 

@@ -12,6 +12,7 @@ use crate::data_loader::{
         utils::{read_pointer_list_ref, read_u32_list_ref, Background, GameObject, Tile, View},
     },
     utils::{
+        chunk::Chunk,
         cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
         error::{DataLoadError, InvalidRoomFlagsSnafu},
     },
@@ -60,7 +61,7 @@ pub struct RoomChunk {
     pub rooms: Vec<Room>,
 }
 
-impl RoomChunk {
+impl Chunk for RoomChunk {
     const IDENT: [u8; 4] = [0x52, 0x4F, 0x4F, 0x4D]; // "ROOM"
 }
 

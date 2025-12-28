@@ -4,7 +4,7 @@ use std::fs;
 
 fn main() {
     env_logger::init();
-    let file_data: Vec<u8> = fs::read("data.win").expect("Cannot read data.win");
+    let file_data: Vec<u8> = fs::read("game.win").expect("Cannot read data.win");
 
     let load_res = data_loader::form::deserialize_form(&file_data);
 

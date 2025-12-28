@@ -2,6 +2,7 @@ use log::info;
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
     texture::TextureItem,
@@ -13,7 +14,7 @@ pub struct TpagChunk {
     pub textures: Vec<TextureItem>,
 }
 
-impl TpagChunk {
+impl Chunk for TpagChunk {
     const IDENT: [u8; 4] = [0x54, 0x50, 0x41, 0x47]; // "TPAG"
 }
 

@@ -2,6 +2,7 @@ use log::{info, warn};
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
 };
@@ -102,7 +103,7 @@ pub struct ObjtChunk {
     pub objects: Vec<Object>,
 }
 
-impl ObjtChunk {
+impl Chunk for ObjtChunk {
     const IDENT: [u8; 4] = [0x4F, 0x42, 0x4A, 0x54]; // "OBJT"
 }
 

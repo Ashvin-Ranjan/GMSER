@@ -3,6 +3,7 @@ use snafu::ResultExt;
 use std::io::{Cursor, Read};
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::{DataLoadError, IOSnafu},
 };
@@ -23,7 +24,7 @@ pub struct CodeChunk {
     pub code_entries: Vec<CodeEntry>,
 }
 
-impl CodeChunk {
+impl Chunk for CodeChunk {
     const IDENT: [u8; 4] = [0x43, 0x4F, 0x44, 0x45]; // "CODE"
 }
 

@@ -2,6 +2,7 @@ use log::{info, warn};
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
     sequence::{PlaybackSpeedType, Sequence},
@@ -68,7 +69,7 @@ pub struct SprtChunk {
     pub sprites: Vec<Sprite>,
 }
 
-impl SprtChunk {
+impl Chunk for SprtChunk {
     const IDENT: [u8; 4] = [0x53, 0x50, 0x52, 0x54]; // "SPRT"
 }
 

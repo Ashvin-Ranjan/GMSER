@@ -4,6 +4,7 @@ use snafu::OptionExt;
 use std::{collections::HashMap, io::Cursor};
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::{DataLoadError, InvalidSoundFlagsSnafu},
 };
@@ -36,7 +37,7 @@ pub struct SondChunk {
     pub sound_map: HashMap<u32, Sound>,
 }
 
-impl SondChunk {
+impl Chunk for SondChunk {
     const IDENT: [u8; 4] = [0x53, 0x4F, 0x4E, 0x44]; // "SOND"
 }
 

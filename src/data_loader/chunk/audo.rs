@@ -6,6 +6,7 @@ use std::{
 };
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::{DataLoadError, IOSnafu},
 };
@@ -21,7 +22,7 @@ pub struct AudoChunk {
     pub audio_map: HashMap<u32, Audio>,
 }
 
-impl AudoChunk {
+impl Chunk for AudoChunk {
     const IDENT: [u8; 4] = [0x41, 0x55, 0x44, 0x4F]; // "AUDO"
 }
 impl Deserializable for AudoChunk {

@@ -2,6 +2,7 @@ use log::{info, warn};
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
 };
@@ -36,7 +37,7 @@ pub struct TginChunk {
     pub texture_groups: Vec<TextureGroupInfo>,
 }
 
-impl TginChunk {
+impl Chunk for TginChunk {
     const IDENT: [u8; 4] = [0x54, 0x47, 0x49, 0x4E]; // "TGIN"
 }
 

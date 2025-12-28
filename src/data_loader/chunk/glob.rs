@@ -2,6 +2,7 @@ use log::info;
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
 };
@@ -12,7 +13,7 @@ pub struct GlobChunk {
     pub globals: Vec<u32>,
 }
 
-impl GlobChunk {
+impl Chunk for GlobChunk {
     const IDENT: [u8; 4] = [0x47, 0x4C, 0x4F, 0x42]; // "GLOB"
 }
 

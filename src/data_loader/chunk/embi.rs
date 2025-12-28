@@ -2,6 +2,7 @@ use log::{info, warn};
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
     texture::TextureItem,
@@ -19,7 +20,7 @@ pub struct EmbiChunk {
     pub images: Vec<EmbeddedImage>,
 }
 
-impl EmbiChunk {
+impl Chunk for EmbiChunk {
     const IDENT: [u8; 4] = [0x45, 0x4D, 0x42, 0x49]; // "EMBI"
 }
 

@@ -2,6 +2,7 @@ use log::info;
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
 };
@@ -21,7 +22,7 @@ pub struct LangChunk {
     pub entry_ids: Vec<String>,
 }
 
-impl LangChunk {
+impl Chunk for LangChunk {
     const IDENT: [u8; 4] = [0x4C, 0x41, 0x4E, 0x47]; // "LANG"
 }
 

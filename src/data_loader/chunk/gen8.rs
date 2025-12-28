@@ -4,6 +4,7 @@ use snafu::{OptionExt, ResultExt};
 use std::io::{Cursor, Read};
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::{DataLoadError, IOSnafu, InvalidFunctionClassificationsSnafu, InvalidInfoFlagsSnafu},
 };
@@ -142,7 +143,7 @@ pub struct Gen8Chunk {
     pub guid: [u8; 16],
 }
 
-impl Gen8Chunk {
+impl Chunk for Gen8Chunk {
     const IDENT: [u8; 4] = [0x47, 0x45, 0x4E, 0x38]; // "GEN8"
 }
 

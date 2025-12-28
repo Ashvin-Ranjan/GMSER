@@ -4,6 +4,7 @@ use snafu::OptionExt;
 use std::io::Cursor;
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::{DataLoadError, InvalidOptionFlagsSnafu},
     texture::TextureItem,
@@ -73,7 +74,7 @@ pub struct OptnChunk {
     constants: Vec<Constant>,
 }
 
-impl OptnChunk {
+impl Chunk for OptnChunk {
     const IDENT: [u8; 4] = [0x4F, 0x50, 0x54, 0x4E]; // "OPTN"
 }
 

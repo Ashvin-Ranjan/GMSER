@@ -2,6 +2,7 @@ use log::info;
 use std::{collections::HashMap, io::Cursor};
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
 };
@@ -19,7 +20,7 @@ pub struct ScptChunk {
     pub script_map: HashMap<u32, Script>,
 }
 
-impl ScptChunk {
+impl Chunk for ScptChunk {
     const IDENT: [u8; 4] = [0x53, 0x43, 0x50, 0x54]; // "SCPT"
 }
 

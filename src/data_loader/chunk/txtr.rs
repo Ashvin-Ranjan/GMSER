@@ -4,6 +4,7 @@ use snafu::ResultExt;
 use std::io::{Cursor, Read};
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::{BZip2DecompressionSnafu, DataLoadError, IOSnafu},
 };
@@ -40,7 +41,7 @@ pub struct TxtrChunk {
     pub page_list: Vec<TexturePage>,
 }
 
-impl TxtrChunk {
+impl Chunk for TxtrChunk {
     const IDENT: [u8; 4] = [0x54, 0x58, 0x54, 0x52]; // "TXTR"
 }
 

@@ -2,6 +2,7 @@ use log::info;
 use std::{collections::HashMap, io::Cursor};
 
 use crate::data_loader::utils::{
+    chunk::Chunk,
     cursor::{handle_cursor_alignment, CustomCursor, Deserializable},
     error::DataLoadError,
 };
@@ -28,7 +29,7 @@ pub struct PathChunk {
     pub path_map: HashMap<u32, Path>,
 }
 
-impl PathChunk {
+impl Chunk for PathChunk {
     const IDENT: [u8; 4] = [0x50, 0x41, 0x54, 0x48]; // "PATH"
 }
 
