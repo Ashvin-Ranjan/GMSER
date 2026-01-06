@@ -37,7 +37,7 @@ TODOs:
     -   [x] TPAG (Required before running)
     -   [x] TGIN (Required before running)
     -   [x] CODE (Required before running)
-    -   [ ] VARI (Required before running)
+    -   [x] VARI (Required before running)
     -   [ ] FUNC (Required before running)
     -   [x] FEAT (Required before running)
     -   [x] STRG (Required before running)
