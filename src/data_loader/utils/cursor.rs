@@ -1,7 +1,7 @@
 use log::{info, warn};
 use snafu::ResultExt;
 use std::collections::HashMap;
-use std::io::{Cursor, Read};
+use std::io::{Cursor, Read, Write};
 
 use crate::data_loader::utils::error::StringDecodeSnafu;
 use crate::data_loader::utils::error::{DataLoadError, IOSnafu};

@@ -1,4 +1,4 @@
-use log::{info, warn};
+use log::warn;
 use snafu::OptionExt;
 use std::{collections::HashMap, io::Cursor};
 
@@ -8,10 +8,11 @@ use crate::data_loader::{
         font::FontChunk, gen8::Gen8Chunk, glob::GlobChunk, lang::LangChunk, objt::ObjtChunk,
         optn::OptnChunk, path::PathChunk, room::RoomChunk, scpt::ScptChunk, sond::SondChunk,
         sprt::SprtChunk, strg::StrgChunk, tgin::TginChunk, tpag::TpagChunk, txtr::TxtrChunk,
+        vari::VariChunk,
     },
     utils::{
         chunk::Chunk,
-        cursor::{CustomCursor, Deserializable},
+        cursor::CustomCursor,
         error::{DataLoadError, MissingChunkIdentSnafu},
     },
 };
@@ -34,6 +35,7 @@ pub struct FormChunk {
     pub tpag: TpagChunk,
     pub tgin: TginChunk,
     pub code: CodeChunk,
+    pub vari: VariChunk,
     pub feat: FeatChunk,
     pub strg: StrgChunk,
     pub txtr: TxtrChunk,
@@ -113,14 +115,17 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
     let embi = load_chunk::<EmbiChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let tpag = load_chunk::<TpagChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let tgin = load_chunk::<TginChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
-    let code = load_chunk::<CodeChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let feat = load_chunk::<FeatChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let strg = load_chunk::<StrgChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let txtr = load_chunk::<TxtrChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let audo = load_chunk::<AudoChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
 
+    // CODE needs to be loaded after VARI and FUNC because reference chains need to resolve
+    let vari = load_chunk::<VariChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
+    let code = load_chunk::<CodeChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
+
     for iter in checked_chunks.iter() {
-        if *iter.1 {
+        if !*iter.1 {
             warn!(
                 "Did not load chunk {}{}{}{}",
                 iter.0[0] as char, iter.0[1] as char, iter.0[2] as char, iter.0[3] as char
@@ -146,6 +151,7 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
         tpag,
         tgin,
         code,
+        vari,
         feat,
         strg,
         txtr,
