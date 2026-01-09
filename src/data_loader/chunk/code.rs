@@ -19,6 +19,7 @@ pub struct CodeEntry {
     pub arguments_count: u16,
     pub unk_flags: u8,
     pub bytecode_addr: u64,
+    pub offset: u32,
 }
 
 #[derive(Debug)]
@@ -91,6 +92,8 @@ impl Deserializable for CodeEntry {
         // Weird things going on with type conversion because the relative address can be negative
         let bytecode_addr = (cursor.position() as i32 + cursor.read_i32()?) as u64;
 
+        let offset = cursor.read_u32()?;
+
         Ok(CodeEntry {
             name,
             length,
@@ -98,6 +101,7 @@ impl Deserializable for CodeEntry {
             arguments_count,
             unk_flags,
             bytecode_addr,
+            offset,
         })
     }
 }

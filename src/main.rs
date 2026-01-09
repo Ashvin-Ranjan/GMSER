@@ -26,7 +26,6 @@ fn main() {
             data.gen8.version_info.release,
             data.gen8.version_info.format,
         );
-        println!("{:#?}", data.vari.variables[2]);
         println!("{:#?}", data.code.code_entries.get(150));
         // println!("{:#?}", data.scpt);
         // for (k, v) in data.strg.string_map.into_iter() {
