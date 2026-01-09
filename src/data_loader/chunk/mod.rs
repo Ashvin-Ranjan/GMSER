@@ -4,6 +4,7 @@ pub mod code;
 pub mod embi;
 pub mod feat;
 pub mod font;
+pub mod func;
 pub mod gen8;
 pub mod glob;
 pub mod lang;

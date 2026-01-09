@@ -5,10 +5,10 @@ use std::{collections::HashMap, io::Cursor};
 use crate::data_loader::{
     chunk::{
         agrp::AgrpChunk, audo::AudoChunk, code::CodeChunk, embi::EmbiChunk, feat::FeatChunk,
-        font::FontChunk, gen8::Gen8Chunk, glob::GlobChunk, lang::LangChunk, objt::ObjtChunk,
-        optn::OptnChunk, path::PathChunk, room::RoomChunk, scpt::ScptChunk, sond::SondChunk,
-        sprt::SprtChunk, strg::StrgChunk, tgin::TginChunk, tpag::TpagChunk, txtr::TxtrChunk,
-        vari::VariChunk,
+        font::FontChunk, func::FuncChunk, gen8::Gen8Chunk, glob::GlobChunk, lang::LangChunk,
+        objt::ObjtChunk, optn::OptnChunk, path::PathChunk, room::RoomChunk, scpt::ScptChunk,
+        sond::SondChunk, sprt::SprtChunk, strg::StrgChunk, tgin::TginChunk, tpag::TpagChunk,
+        txtr::TxtrChunk, vari::VariChunk,
     },
     utils::{
         chunk::Chunk,
@@ -36,6 +36,7 @@ pub struct FormChunk {
     pub tgin: TginChunk,
     pub code: CodeChunk,
     pub vari: VariChunk,
+    pub func: FuncChunk,
     pub feat: FeatChunk,
     pub strg: StrgChunk,
     pub txtr: TxtrChunk,
@@ -115,14 +116,16 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
     let embi = load_chunk::<EmbiChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let tpag = load_chunk::<TpagChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let tgin = load_chunk::<TginChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
+    let code = load_chunk::<CodeChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
+    let vari = load_chunk::<VariChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
+    let func = load_chunk::<FuncChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let feat = load_chunk::<FeatChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let strg = load_chunk::<StrgChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let txtr = load_chunk::<TxtrChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
     let audo = load_chunk::<AudoChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
 
-    // CODE needs to be loaded after VARI and FUNC because reference chains need to resolve
-    let vari = load_chunk::<VariChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
-    let code = load_chunk::<CodeChunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
+    // TODO: As a bit of a check it may be good to add in some warnings here
+    // - Check that none of the code locals in the FUNC chunk exceed the limit set in VARI
 
     for iter in checked_chunks.iter() {
         if !*iter.1 {
@@ -152,6 +155,7 @@ pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
         tgin,
         code,
         vari,
+        func,
         feat,
         strg,
         txtr,
