@@ -96,9 +96,11 @@ impl FormChunk {
 }
 
 /// Locates the start of chunks and places them into a hashmap
+///
 /// # Arguments
 /// - `cursor`: The cursor which contains the file data.
 /// - `bounds`: The length of the file.
+///
 /// # Output
 /// Returns a [`HashMap`] where the key is the chunk identifier and the value
 /// is the chunk location.
@@ -120,20 +122,25 @@ fn load_chunk_locs(
 }
 
 /// Deserializes the chunk given the chunk type
+///
 /// # Example
 /// ```
 /// let gen8 = load_chunk::<Gen8Chunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
 /// ```
 /// # Arguments
+///
 /// - `cursor`: The cursor which contains the file data.
 /// - `chunk_locs`: A map which maps chunk identifiers to locations.
 /// - `checked_chunks`: A map to edit which maps chunk identifiers to booleans.
+///
 /// # Output
 /// The deserialized chunk.
 ///
 /// It will return a [`DataLoadError`] if there was an issue in deserializing the chunk.
+///
 /// # Side Effects
 /// The value for key `T::IDENT` in `checked_chunks` will be set to `true`.
+///
 /// # Notes
 /// - `checked_chunks` is used as a debugging tool to note any chunks which the program was unable to load.
 fn load_chunk<T>(
@@ -155,8 +162,10 @@ where
 }
 
 /// Takes in data as a slice of [`u8`] values and returns a [`FormChunk`].
+///
 /// # Arguments
 /// - `data`: The file as a slice of [`u8`] values.
+///
 /// # Output
 /// The file data deserialized into a [`FormChunk`].
 ///
