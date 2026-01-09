@@ -18,6 +18,12 @@ pub struct Reference {
 const REFERENCE_LOCATION_MASK: u32 = 0x07FFFFFF;
 
 /// This resolves reference chains for both variables and functions
+/// # Arguments
+/// - `cursor`: The cursor which conatins the file data.
+/// - `occurrences`: The number of occurrences in the reference chain.
+/// - `id`: The identifier of the object referenced.
+/// - `first_occurrence`: The first occurance of the referenced object.
+/// - `reference_map`: The reference map to edit.
 /// # Format Documentation.
 /// In bytecode, it appears that rather than storing identifiers to the variable or function one wishes to
 /// manipulate or call, the raw bytecode instead contains a relative pointer to the next occurance of that
@@ -30,7 +36,7 @@ const REFERENCE_LOCATION_MASK: u32 = 0x07FFFFFF;
 /// is contextless and The cursor's internal type would need to be mutable, which would be a large and unneeded
 /// change.
 ///
-/// In order to handle that issue this function instead returns a map with the indices of the each reference and the
+/// In order to handle that issue this function instead edits a map with the indices of the each reference and the
 /// Reference object which it points to.
 pub fn resolve_reference_chain(
     cursor: &mut Cursor<&[u8]>,

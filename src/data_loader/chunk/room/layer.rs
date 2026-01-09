@@ -1,7 +1,5 @@
 use std::io::Cursor;
 
-use log::info;
-
 use crate::data_loader::{
     chunk::room::utils::Tile,
     utils::{

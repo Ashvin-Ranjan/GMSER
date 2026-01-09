@@ -1,3 +1,25 @@
+//! This is the entry point for deserializing a `*.win` file.
+//!
+//! # File Format Overview
+//! Game Maker Studio data files consist of chunks. These chunks start with a 4-byte identifier
+//! and then contain an unsigned 32-bit integer denoting the size of the chunk (excluding the
+//! identifier and the size information).
+//!
+//! Each file starts with a chunk with the identifier `FORM`. The size of the `FORM` chunk is set
+//! to be the size of the file minus the 8 bytes for the identifier and the size inofrmation.
+//!
+//! Each identifer is aligned to 16 bytes, except for `GEN8` (the chunk which starts after `FORM`),
+//! which is set at the 8th byte.
+//!
+//! # Implementation Notes
+//! Rather than loading in all of the chunk sequentially, all of the chunk identifers are loaded into
+//! a dictionary and then implemented chunks are then loaded. This is to help with future compatibility
+//! as there are some chunks which have been inserted into the middle of the file before (`PSEM` and `PSYS`,
+//! for example).
+//!
+//! FormChunk does not implement [`crate::data_loader::utils::cursor::Deserializable`] because it does not allow
+//! for outside context, which may be useful in the future.
+
 use log::warn;
 use snafu::OptionExt;
 use std::{collections::HashMap, io::Cursor};
@@ -17,36 +39,71 @@ use crate::data_loader::{
     },
 };
 
+/// This is the main struct which contains all of the deserialized data
+/// from the `*.win` file.
 pub struct FormChunk {
+    /// The size of the file minus 8 bytes for the identifier and size.
     pub size: u32,
+    /// The general information chunk.
     pub gen8: Gen8Chunk,
+    /// The options chunk.
     pub optn: OptnChunk,
+    /// The language groups chunk.
     pub lang: LangChunk,
+    /// The sounds chunk.
     pub sond: SondChunk,
+    /// The audio groups chunk.
     pub agrp: AgrpChunk,
+    /// The sprites chunk.
     pub sprt: SprtChunk,
+    /// The paths chunk.
     pub path: PathChunk,
+    /// The scripts chunk.
     pub scpt: ScptChunk,
+    /// The global variables chunk.
     pub glob: GlobChunk,
+    /// The font chunk.
     pub font: FontChunk,
+    /// The objects chunk.
     pub objt: ObjtChunk,
+    /// The rooms chunk.
     pub room: RoomChunk,
+    /// The embedded images chunk.
     pub embi: EmbiChunk,
+    /// The texture pages chunk.
     pub tpag: TpagChunk,
+    /// The texture group info chunk.
     pub tgin: TginChunk,
+    /// The code chunk.
     pub code: CodeChunk,
+    /// The variables chunk.
     pub vari: VariChunk,
+    /// The functions chunk.
     pub func: FuncChunk,
+    /// The features chunk.
     pub feat: FeatChunk,
+    /// The strings chunk.
     pub strg: StrgChunk,
+    /// The textures chunk.
     pub txtr: TxtrChunk,
+    /// The audio chunk.
     pub audo: AudoChunk,
 }
 
 impl FormChunk {
-    const IDENT: [u8; 4] = [0x46, 0x4F, 0x52, 0x4D]; // "FORM"
+    /// Translates to "FORM" (no null terminator).
+    const IDENT: [u8; 4] = [0x46, 0x4F, 0x52, 0x4D];
 }
 
+/// Locates the start of chunks and places them into a hashmap
+/// # Arguments
+/// - `cursor`: The cursor which contains the file data.
+/// - `bounds`: The length of the file.
+/// # Output
+/// Returns a [`HashMap`] where the key is the chunk identifier and the value
+/// is the chunk location.
+///
+/// Returns a [`DataLoadError`] if there was an issue with reading the identifiers.
 fn load_chunk_locs(
     cursor: &mut Cursor<&[u8]>,
     bounds: u64,
@@ -62,6 +119,23 @@ fn load_chunk_locs(
     Ok(chunk_locs)
 }
 
+/// Deserializes the chunk given the chunk type
+/// # Example
+/// ```
+/// let gen8 = load_chunk::<Gen8Chunk>(&mut cursor, &chunk_locs, &mut checked_chunks)?;
+/// ```
+/// # Arguments
+/// - `cursor`: The cursor which contains the file data.
+/// - `chunk_locs`: A map which maps chunk identifiers to locations.
+/// - `checked_chunks`: A map to edit which maps chunk identifiers to booleans.
+/// # Output
+/// The deserialized chunk.
+///
+/// It will return a [`DataLoadError`] if there was an issue in deserializing the chunk.
+/// # Side Effects
+/// The value for key `T::IDENT` in `checked_chunks` will be set to `true`.
+/// # Notes
+/// - `checked_chunks` is used as a debugging tool to note any chunks which the program was unable to load.
 fn load_chunk<T>(
     cursor: &mut Cursor<&[u8]>,
     chunk_locs: &HashMap<[u8; 4], u64>,
@@ -80,6 +154,13 @@ where
     T::deserialize(cursor)
 }
 
+/// Takes in data as a slice of [`u8`] values and returns a [`FormChunk`].
+/// # Arguments
+/// - `data`: The file as a slice of [`u8`] values.
+/// # Output
+/// The file data deserialized into a [`FormChunk`].
+///
+/// The function will return an error if there was an issue during deserialization.
 pub fn deserialize_form(data: &[u8]) -> Result<FormChunk, DataLoadError> {
     let mut cursor = Cursor::new(data);
 
